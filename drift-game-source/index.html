@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Drift — Cozy Infinite Space Flight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Space+Grotesk:wght@300;400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; overflow: hidden; background: #06040f;
+    height: 100%; width: 100%; touch-action: none;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #e2e8ff; user-select: none;
+  }
+  canvas { display: block; position: fixed; inset: 0; width: 100%; height: 100%; }
+
+  /* Retro CRT / Cyberpunk Arcade Scanline Overlay */
+  #crtOverlay {
+    position: fixed; inset: 0; pointer-events: none; z-index: 35; display: none;
+    background: repeating-linear-gradient(rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,255,180,0.06) 3px, rgba(0,0,0,0) 4px);
+    box-shadow: inset 0 0 100px rgba(0, 255, 170, 0.25);
+  }
+  #crtOverlay.visible { display: block; }
+
+  #hud {
+    position: fixed; inset: 0; pointer-events: none; z-index: 10;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 22px;
+  }
+  #vignette {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 40%, rgba(4,2,14,0.72) 100%);
+  }
+
+  /* Top Bar */
+  .top-bar {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    pointer-events: auto; gap: 16px;
+  }
+  .brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px; font-weight: 300; letter-spacing: 6px;
+    color: #fff; text-shadow: 0 0 15px rgba(150, 180, 255, 0.6);
+  }
+  .brand-sub {
+    font-size: 11px; letter-spacing: 2px; color: #8fa0dd; text-transform: uppercase; margin-top: 2px;
+  }
+
+  /* Horizon Compass Strip */
+  .compass-container {
+    background: rgba(14, 18, 42, 0.6); border: 1px solid rgba(160, 190, 255, 0.22);
+    border-radius: 20px; padding: 4px 18px; backdrop-filter: blur(10px);
+    display: flex; align-items: center; gap: 12px; font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; color: #7eeaff; letter-spacing: 2px;
+  }
+  .compass-dot { width: 6px; height: 6px; background: #6ee7ff; border-radius: 50%; box-shadow: 0 0 8px #6ee7ff; }
+
+  /* Control buttons cluster */
+  .action-cluster {
+    display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;
+  }
+  .hud-btn {
+    background: rgba(18, 22, 45, 0.58);
+    border: 1px solid rgba(170, 190, 255, 0.22);
+    color: #d8e2ff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px;
+    backdrop-filter: blur(12px);
+    transition: all 0.2s ease;
+    pointer-events: auto;
+  }
+  .hud-btn:hover {
+    background: rgba(45, 55, 100, 0.68);
+    border-color: rgba(200, 220, 255, 0.45);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(100, 140, 255, 0.2);
+  }
+  .hud-btn.active {
+    background: rgba(100, 140, 255, 0.32);
+    border-color: #8fb5ff;
+    color: #ffffff;
+    box-shadow: 0 0 16px rgba(120, 160, 255, 0.4);
+  }
+
+  /* Holographic Cockpit Reticle HUD */
+  #cockpitHud {
+    position: fixed; inset: 0; pointer-events: none; z-index: 15;
+    display: none; align-items: center; justify-content: center;
+    font-family: 'Share Tech Mono', monospace; color: #72eaff;
+  }
+  #cockpitHud.visible { display: flex; }
+  .reticle-cross {
+    width: 60px; height: 60px; border: 1px solid rgba(114, 234, 255, 0.5);
+    border-radius: 50%; position: relative;
+    box-shadow: 0 0 15px rgba(114, 234, 255, 0.3);
+  }
+  .reticle-cross::before {
+    content: ""; position: absolute; left: 50%; top: -10px; bottom: -10px; width: 1px;
+    background: rgba(114, 234, 255, 0.4); transform: translateX(-50%);
+  }
+  .reticle-cross::after {
+    content: ""; position: absolute; top: 50%; left: -10px; right: -10px; height: 1px;
+    background: rgba(114, 234, 255, 0.4); transform: translateY(-50%);
+  }
+  .reticle-ladder {
+    position: absolute; width: 140px; height: 2px;
+    background: rgba(114, 234, 255, 0.35);
+  }
+
+  /* Intro Banner */
+  #intro {
+    position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%);
+    text-align: center; transition: opacity 1.2s ease, transform 1.2s ease;
+    text-shadow: 0 0 24px rgba(140, 170, 255, 0.6);
+    pointer-events: none;
+  }
+  #intro h1 { font-weight: 200; font-size: 42px; letter-spacing: 12px; margin: 0 0 12px 0; color: #fff; }
+  #intro p { font-size: 13px; letter-spacing: 3px; color: #a4b4ee; text-transform: uppercase; margin: 0; line-height: 1.8; }
+  #intro.hidden { opacity: 0; transform: translate(-50%, -46%) scale(0.96); }
+
+  /* Sector Transition Banner */
+  #sectorBanner {
+    position: absolute; top: 18%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center; opacity: 0; transition: opacity 1.2s ease, transform 1.2s ease;
+    pointer-events: none;
+  }
+  #sectorBanner.visible {
+    opacity: 1; transform: translate(-50%, -50%);
+  }
+  .sec-tag {
+    font-size: 11px; letter-spacing: 4px; color: #8bb1ff; text-transform: uppercase; font-weight: 600;
+  }
+  .sec-title {
+    font-size: 28px; font-weight: 300; letter-spacing: 4px; color: #ffffff; margin: 4px 0;
+    text-shadow: 0 0 20px rgba(150, 190, 255, 0.5);
+  }
+  .sec-sub {
+    font-size: 13px; color: #c4d3ff; letter-spacing: 1.5px; opacity: 0.85;
+  }
+
+  /* Hyperspace Warp Banner */
+  #warpBanner {
+    position: absolute; top: 28%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+    background: rgba(30, 80, 180, 0.4); border: 1px solid #7de6ff;
+    padding: 10px 24px; border-radius: 30px; backdrop-filter: blur(10px);
+    text-align: center; opacity: 0; transition: all 0.3s ease;
+    pointer-events: none; box-shadow: 0 0 30px rgba(100, 200, 255, 0.6);
+  }
+  #warpBanner.visible {
+    opacity: 1; transform: translate(-50%, -50%) scale(1.05);
+  }
+  .warp-text {
+    font-size: 14px; font-weight: 600; letter-spacing: 3px; color: #d6f6ff; text-transform: uppercase;
+  }
+
+  /* Bottom Telemetry */
+  .bottom-bar {
+    display: flex; justify-content: space-between; align-items: flex-end;
+  }
+  #stats {
+    font-size: 12px; letter-spacing: 1.5px;
+    text-transform: uppercase; opacity: 0.85; line-height: 1.6;
+    background: rgba(12, 16, 36, 0.45);
+    padding: 12px 18px; border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+  }
+  #stats .big { font-size: 24px; font-weight: 300; letter-spacing: 2px; color: #fff; }
+  #speedbar {
+    width: 130px; height: 4px; background: rgba(255, 255, 255, 0.12);
+    margin: 8px 0 6px 0; border-radius: 2px; overflow: hidden;
+  }
+  #speedfill {
+    height: 100%; width: 30%;
+    background: linear-gradient(90deg, #5be7ff, #a985ff);
+    transition: width 0.1s ease;
+  }
+  .ring-counter {
+    margin-top: 6px; color: #8ee9ff; font-weight: 500; font-size: 11px;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  /* Modals Common */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(3, 4, 12, 0.72);
+    backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center;
+    z-index: 50;
+  }
+  .modal-overlay.visible { display: flex; }
+  .modal-card {
+    background: rgba(18, 22, 45, 0.92);
+    border: 1px solid rgba(160, 185, 255, 0.3);
+    border-radius: 20px; padding: 26px 32px; max-width: 480px; width: 90%;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(100, 140, 255, 0.2);
+  }
+  .modal-title { font-size: 20px; font-weight: 300; letter-spacing: 3px; margin: 0 0 8px 0; color: #fff; }
+  .modal-desc { font-size: 12px; color: #9daedb; margin-bottom: 20px; letter-spacing: 1px; }
+
+  /* Sliders for Audio Mixer */
+  .slider-row { margin-bottom: 14px; }
+  .slider-label { display: flex; justify-content: space-between; font-size: 12px; color: #c4d4ff; margin-bottom: 5px; }
+  .audio-slider {
+    width: 100%; -webkit-appearance: none; appearance: none; height: 5px;
+    border-radius: 3px; background: rgba(255, 255, 255, 0.15); outline: none;
+  }
+  .audio-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 14px; height: 14px;
+    border-radius: 50%; background: #6ee7ff; cursor: pointer;
+  }
+
+  /* Ship Themes Grid */
+  .theme-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .theme-card {
+    background: rgba(30, 36, 68, 0.6); border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px; padding: 12px; cursor: pointer; text-align: left;
+    transition: all 0.2s ease;
+  }
+  .theme-card:hover { border-color: #8faaff; transform: translateY(-2px); }
+  .theme-card.active { border-color: #7ce8ff; background: rgba(80, 120, 220, 0.3); }
+  .theme-swatch { width: 100%; height: 16px; border-radius: 6px; margin-bottom: 8px; }
+  .theme-name { font-size: 13px; font-weight: 500; color: #fff; }
+
+  /* Logbook Stats Grid */
+  .log-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .log-stat-box {
+    background: rgba(28, 34, 62, 0.55); border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px; padding: 12px 16px;
+  }
+  .log-stat-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: #9aa8d8; }
+  .log-stat-value { font-size: 22px; font-weight: 300; color: #ffffff; margin-top: 4px; }
+  .log-section-title { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #7fe6ff; margin: 16px 0 8px 0; }
+  .discovery-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .disc-pill {
+    font-size: 11px; padding: 4px 10px; border-radius: 12px;
+    background: rgba(50, 70, 130, 0.4); border: 1px solid rgba(130, 170, 255, 0.25);
+    color: #cfe0ff;
+  }
+
+  /* Photo Mode HUD */
+  #photoHud {
+    position: fixed; inset: 0; pointer-events: none; z-index: 40;
+    display: none; flex-direction: column; justify-content: space-between; padding: 24px;
+  }
+  #photoHud.visible { display: flex; }
+  .photo-top { display: flex; justify-content: space-between; align-items: center; pointer-events: auto; }
+  .photo-title {
+    font-size: 18px; font-weight: 300; letter-spacing: 4px; color: #fff;
+    background: rgba(14, 18, 40, 0.65); padding: 8px 18px; border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);
+  }
+  .photo-bottom {
+    display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; pointer-events: auto;
+  }
+
+  /* Zen Meditation Mode Overlay */
+  #zenOverlay {
+    position: fixed; inset: 0; pointer-events: none; z-index: 45;
+    display: none; flex-direction: column; justify-content: space-between; align-items: center;
+    padding: 36px 24px; transition: opacity 1.2s ease;
+  }
+  #zenOverlay.visible { display: flex; }
+  .zen-top {
+    font-size: 13px; letter-spacing: 6px; text-transform: uppercase; color: #a4c2ff;
+    background: rgba(14, 18, 42, 0.45); padding: 8px 24px; border-radius: 30px;
+    border: 1px solid rgba(160, 190, 255, 0.2); backdrop-filter: blur(8px);
+  }
+  .zen-center {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .zen-pacer-ring {
+    width: 140px; height: 140px; border-radius: 50%;
+    border: 1px solid rgba(114, 234, 255, 0.35);
+    box-shadow: 0 0 35px rgba(114, 234, 255, 0.2), inset 0 0 25px rgba(114, 234, 255, 0.15);
+    display: flex; align-items: center; justify-content: center;
+    animation: zenBreathe 8s ease-in-out infinite;
+  }
+  @keyframes zenBreathe {
+    0%, 100% { transform: scale(0.85); border-color: rgba(114, 234, 255, 0.25); box-shadow: 0 0 20px rgba(114, 234, 255, 0.15); }
+    50% { transform: scale(1.2); border-color: rgba(180, 220, 255, 0.65); box-shadow: 0 0 45px rgba(130, 200, 255, 0.4); }
+  }
+  .zen-pacer-text {
+    font-size: 12px; letter-spacing: 3px; color: #d0e4ff; text-transform: uppercase; font-weight: 300;
+  }
+  .zen-bottom {
+    display: flex; align-items: center; gap: 14px; pointer-events: auto;
+  }
+  .zen-timer {
+    font-family: 'Share Tech Mono', monospace; font-size: 14px; color: #9bb3ef; letter-spacing: 2px;
+  }
+
+  /* Mobile Onscreen Touch Controls */
+  #touchpad {
+    position: absolute; pointer-events: auto; bottom: 22px; right: 18px;
+    width: 150px; height: 150px; display: none; z-index: 20;
+  }
+  .tbtn {
+    position: absolute; width: 52px; height: 52px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(6px); color: #dfe3ff; font-size: 20px;
+    display: flex; align-items: center; justify-content: center; user-select: none;
+  }
+  .tbtn:active { background: rgba(160, 180, 255, 0.35); transform: scale(0.95); }
+  #tp-up    { left: 49px; top: 0; }
+  #tp-down  { left: 49px; top: 98px; }
+  #tp-left  { left: 0; top: 49px; }
+  #tp-right { left: 98px; top: 49px; }
+  #boostbtn {
+    position: absolute; pointer-events: auto; bottom: 28px; left: 18px;
+    width: 68px; height: 68px; border-radius: 50%;
+    background: rgba(120, 150, 255, 0.16); border: 1px solid rgba(160, 190, 255, 0.35);
+    backdrop-filter: blur(6px); color: #dfe3ff; font-size: 11px; letter-spacing: 1.5px;
+    text-transform: uppercase; font-weight: 600;
+    display: none; align-items: center; justify-content: center; user-select: none; z-index: 20;
+  }
+  #boostbtn:active { background: rgba(160, 190, 255, 0.45); transform: scale(0.95); }
+
+  @media (pointer: coarse) {
+    #touchpad { display: block; }
+    #boostbtn { display: flex; }
+    #stats { bottom: 100px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="crtOverlay"></div>
+
+<!-- Zen Meditation Mode Overlay -->
+<div id="zenOverlay">
+  <div class="zen-top">ZEN MEDITATION FLIGHT</div>
+  <div class="zen-center">
+    <div class="zen-pacer-ring">
+      <div class="zen-pacer-text" id="zenPacerText">BREATHE</div>
+    </div>
+  </div>
+  <div class="zen-bottom">
+    <div class="zen-timer" id="zenTimer">00:00</div>
+    <button class="hud-btn" id="exitZenBtn">✕ Exit Zen [U]</button>
+  </div>
+</div>
+
+<div id="hud">
+  <div id="vignette"></div>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div>
+      <div class="brand">D R I F T</div>
+      <div class="brand-sub" id="sectorNameLabel">Violet Opal Nebula</div>
+    </div>
+
+    <!-- Center Compass Strip -->
+    <div class="compass-container" id="compassStrip">
+      <span class="compass-dot"></span>
+      <span id="compassHeading">HDG: 000°</span>
+      <span style="opacity:0.4;">|</span>
+      <span id="compassNext">NEXT: 450 ly</span>
+    </div>
+
+    <div class="action-cluster">
+      <button class="hud-btn" id="radioBtn" title="In-Flight Radio [T]">
+        📻 <span id="radioLabel">Cosmic Chill</span>
+      </button>
+      <button class="hud-btn" id="zenBtn" title="Zen Meditation Mode [U]">
+        🧘 Zen
+      </button>
+      <button class="hud-btn" id="ribbonBtn" title="Toggle Aurora Ribbon [R]">
+        ✨ Ribbon
+      </button>
+      <button class="hud-btn" id="crtBtn" title="Retro CRT Arcade [V]">
+        📺 CRT
+      </button>
+      <button class="hud-btn" id="camBtn" title="Cycle Camera [C]">
+        🎥 <span id="camLabel">Chase</span>
+      </button>
+      <button class="hud-btn" id="autoBtn" title="Autopilot Cruise [Z]">
+        🚀 <span id="autoLabel">Cruise Off</span>
+      </button>
+      <button class="hud-btn" id="shipBtn" title="Custom Ship [H]">
+        🎨 Ship
+      </button>
+      <button class="hud-btn" id="logbookBtn" title="Traveler Logbook [L]">
+        📜 Codex
+      </button>
+      <button class="hud-btn" id="mixerBtn" title="Sound Mixer [M]">
+        🎚️ Sound
+      </button>
+      <button class="hud-btn" id="photoBtn" title="Photo Mode [P]">
+        📷 Photo
+      </button>
+    </div>
+  </div>
+
+  <!-- Holographic Cockpit Reticle -->
+  <div id="cockpitHud">
+    <div class="reticle-ladder"></div>
+    <div class="reticle-cross"></div>
+  </div>
+
+  <!-- Intro Greeting -->
+  <div id="intro">
+    <h1>D R I F T</h1>
+    <p>Steer: <b>A / D</b> or <b>Arrows</b> · Boost: <b>Shift</b> · Drift: <b>Space</b></p>
+    <p style="font-size:11px; margin-top:6px; opacity:0.7;">[T] Radio · [U] Zen · [R] Ribbon · [V] CRT · [C] Camera · [Z] Cruise · [H] Hangar · [L] Codex · [M] Mixer · [P] Photo</p>
+  </div>
+
+  <!-- Sector Announcer Banner -->
+  <div id="sectorBanner">
+    <div class="sec-tag" id="sectorNum">SECTOR 1</div>
+    <div class="sec-title" id="sectorTitle">Violet Opal Nebula</div>
+    <div class="sec-sub" id="sectorSub">Crystalline dust clouds and ancient amethyst formations</div>
+  </div>
+
+  <!-- Hyperspace Jump Banner -->
+  <div id="warpBanner">
+    <div class="warp-text">⚡ HYPERSPACE WARP ENGAGED ⚡</div>
+  </div>
+
+  <!-- Bottom Telemetry -->
+  <div class="bottom-bar">
+    <div id="stats">
+      <div class="big"><span id="speedNum">0</span> <span style="font-size:12px;opacity:0.75;">u/s</span></div>
+      <div id="speedbar"><div id="speedfill"></div></div>
+      <div id="distNum">0 ly traveled</div>
+      <div class="ring-counter">💎 <span id="ringCount">0</span> resonance rings · <span id="streakCount">0</span> streak</div>
+    </div>
+  </div>
+</div>
+
+<!-- Sound Mixer Modal -->
+<div class="modal-overlay" id="mixerModal">
+  <div class="modal-card">
+    <div class="modal-title">AUDIO FREQUENCY MIXER</div>
+    <div class="modal-desc">Adjust synthesizer and environmental soundscape balance</div>
+
+    <div class="slider-row">
+      <div class="slider-label"><span>Master Volume</span><span id="valMaster">75%</span></div>
+      <input type="range" min="0" max="100" value="75" class="audio-slider" id="sliderMaster">
+    </div>
+    <div class="slider-row">
+      <div class="slider-label"><span>Ambient Synthesizer & Pads</span><span id="valMusic">65%</span></div>
+      <input type="range" min="0" max="100" value="65" class="audio-slider" id="sliderMusic">
+    </div>
+    <div class="slider-row">
+      <div class="slider-label"><span>Engine Thruster Drone</span><span id="valEngine">45%</span></div>
+      <input type="range" min="0" max="100" value="45" class="audio-slider" id="sliderEngine">
+    </div>
+    <div class="slider-row">
+      <div class="slider-label"><span>Resonance Chimes & SFX</span><span id="valSfx">80%</span></div>
+      <input type="range" min="0" max="100" value="80" class="audio-slider" id="sliderSfx">
+    </div>
+
+    <div class="log-section-title">Gamepad Haptics</div>
+    <div class="discovery-pills" style="margin-top:8px;">
+      <button class="hud-btn active" id="rumbleHigh">High</button>
+      <button class="hud-btn" id="rumbleSoft">Soft</button>
+      <button class="hud-btn" id="rumbleOff">Off</button>
+    </div>
+
+    <div style="text-align: right; margin-top: 22px;">
+      <button class="hud-btn active" id="closeMixerModal">Save Audio</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ship Customizer Modal -->
+<div class="modal-overlay" id="shipModal">
+  <div class="modal-card" style="max-height: 90vh; overflow-y: auto;">
+    <div class="modal-title">VESSEL HANGAR</div>
+    <div class="modal-desc">Select hull coating & engine resonance harmonics</div>
+    <div class="theme-grid">
+      <div class="theme-card active" data-theme="arctic">
+        <div class="theme-swatch" style="background: linear-gradient(90deg, #eef1ff, #8fd6ff);"></div>
+        <div class="theme-name">Arctic Starlight</div>
+      </div>
+      <div class="theme-card" data-theme="obsidian">
+        <div class="theme-swatch" style="background: linear-gradient(90deg, #181b28, #ff3b94);"></div>
+        <div class="theme-name">Obsidian Void</div>
+      </div>
+      <div class="theme-card" data-theme="solar">
+        <div class="theme-swatch" style="background: linear-gradient(90deg, #ffe4b5, #ff9922);"></div>
+        <div class="theme-name">Solar Phoenix</div>
+      </div>
+      <div class="theme-card" data-theme="emerald">
+        <div class="theme-swatch" style="background: linear-gradient(90deg, #d4f8ea, #2ef8a0);"></div>
+        <div class="theme-name">Emerald Genesis</div>
+      </div>
+    </div>
+
+    <div class="log-section-title" style="margin-top: 16px;">HYPERSPACE WARP PALETTE</div>
+    <div class="theme-grid" id="warpThemeGrid">
+      <div class="theme-card active" data-warp="cyan">
+        <div class="theme-swatch" style="background: linear-gradient(90deg, #38bdf8, #6ee7ff);"></div>
+        <div class="theme-name">Prism Cyan</div>
+      </div>
+      <div class="theme-card" data-warp="magenta">
+        <div class="theme-swatch" style="background: linear-gradient(90deg, #d946ef, #ff3b94);"></div>
+        <div class="theme-name">Cyber Magenta</div>
+      </div>
+      <div class="theme-card" data-warp="solar">
+        <div class="theme-swatch" style="background: linear-gradient(90deg, #f59e0b, #ffaa22);"></div>
+        <div class="theme-name">Solar Amber</div>
+      </div>
+      <div class="theme-card" data-warp="emerald">
+        <div class="theme-swatch" style="background: linear-gradient(90deg, #10b981, #2ef8a0);"></div>
+        <div class="theme-name">Emerald Matrix</div>
+      </div>
+      <div class="theme-card" data-warp="amethyst">
+        <div class="theme-swatch" style="background: linear-gradient(90deg, #8b5cf6, #c084fc);"></div>
+        <div class="theme-name">Deep Amethyst</div>
+      </div>
+      <div class="theme-card" data-warp="rainbow">
+        <div class="theme-swatch" style="background: linear-gradient(90deg, #ff4e50, #f9d423, #6ee7ff);"></div>
+        <div class="theme-name">Prism Rainbow</div>
+      </div>
+    </div>
+
+    <div style="text-align: right; margin-top: 14px;">
+      <button class="hud-btn active" id="closeShipModal">Deploy Vessel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Traveler's Codex / Logbook Modal -->
+<div class="modal-overlay" id="logbookModal">
+  <div class="modal-card">
+    <div class="modal-title">TRAVELER'S CODEX</div>
+    <div class="modal-desc">Recorded navigational telemetry & cosmic discoveries</div>
+    <div class="log-stat-grid">
+      <div class="log-stat-box">
+        <div class="log-stat-label">Lifetime Distance</div>
+        <div class="log-stat-value"><span id="codexLifetime">0</span> <span style="font-size:12px;opacity:0.7;">ly</span></div>
+      </div>
+      <div class="log-stat-box">
+        <div class="log-stat-label">Resonance Crystals</div>
+        <div class="log-stat-value" id="codexRings">0</div>
+      </div>
+      <div class="log-stat-box">
+        <div class="log-stat-label">Stargates Traversed</div>
+        <div class="log-stat-value" id="codexGates">0</div>
+      </div>
+      <div class="log-stat-box">
+        <div class="log-stat-label">Hyperspace Jumps</div>
+        <div class="log-stat-value" id="codexWarps">0</div>
+      </div>
+    </div>
+    <div class="log-section-title">Discovered Sectors</div>
+    <div class="discovery-pills" id="codexSectorList">
+      <div class="disc-pill">Violet Opal Nebula</div>
+    </div>
+    <div class="log-section-title">Celestial Encounters</div>
+    <div class="discovery-pills" id="codexAnomalyList">
+      <div class="disc-pill">Ancient Stargates</div>
+      <div class="disc-pill">Astral Space Mantas</div>
+      <div class="disc-pill">Singularity Event Horizon</div>
+    </div>
+    <div style="text-align: right; margin-top: 22px;">
+      <button class="hud-btn active" id="closeLogbookModal">Resume Flight</button>
+    </div>
+  </div>
+</div>
+
+<!-- Photo Mode HUD -->
+<div id="photoHud">
+  <div class="photo-top">
+    <div class="photo-title">ZEN PHOTO MODE</div>
+    <button class="hud-btn" id="exitPhotoBtn">✕ Exit Flight</button>
+  </div>
+  <div style="text-align: center; color: #a5b6f0; font-size: 12px; letter-spacing: 2px;">
+    Drag mouse to orbit · Scroll to zoom
+  </div>
+  <div class="photo-bottom">
+    <button class="hud-btn" id="photoFilterBtn">🎨 Filter: <span id="photoFilterName">Natural</span></button>
+    <button class="hud-btn active" id="capturePhotoBtn">📸 Take Snapshot (PNG)</button>
+  </div>
+</div>
+
+<!-- Touch D-Pad for Mobile/Tablets -->
+<div id="touchpad">
+  <div class="tbtn" id="tp-up">▲</div>
+  <div class="tbtn" id="tp-down">▼</div>
+  <div class="tbtn" id="tp-left">◀</div>
+  <div class="tbtn" id="tp-right">▶</div>
+</div>
+<div id="boostbtn">BOOST</div>
+
+<script type="module">
+  import { startGame } from "/src/main.js";
+  startGame();
+</script>
+</body>
+</html>
