@@ -86,7 +86,7 @@ export function startGame() {
     console.warn("Keyboard input unavailable:", err.message);
   }
 
-  for (const [id, flag] of [["tp-up", "up"], ["tp-down", "down"], ["tp-left", "left"], ["tp-right", "right"], ["boostbtn", "boost"]]) {
+  for (const [id, flag] of [["tp-up", "up"], ["tp-down", "down"], ["tp-left", "left"], ["tp-right", "right"], ["tp-shield", "shield"], ["boostbtn", "boost"]]) {
     try {
       unbindHooks.push(bindTouchButton(document, id, flag, inputRef, { onFirstInput: userInteracted }));
     } catch (err) {
@@ -94,7 +94,110 @@ export function startGame() {
     }
   }
 
-  // 7. UI Helpers & Banners
+  // 7. Tactical Radar & Audio Visualizer Canvas Helpers
+  const radarCanvas = document.getElementById("radarCanvas");
+  const radarCtx = radarCanvas?.getContext("2d");
+  const vizCanvas = document.getElementById("audioVisualizerCanvas");
+  const vizCtx = vizCanvas?.getContext("2d");
+
+  function drawTacticalRadar(shipZ, offsetX, offsetY) {
+    if (!radarCtx || !radarCanvas) return;
+    const w = radarCanvas.width;
+    const h = radarCanvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+
+    radarCtx.clearRect(0, 0, w, h);
+
+    // Outer grid rings
+    radarCtx.strokeStyle = "rgba(110, 231, 255, 0.25)";
+    radarCtx.lineWidth = 1;
+    radarCtx.beginPath();
+    radarCtx.arc(cx, cy, 24, 0, Math.PI * 2);
+    radarCtx.arc(cx, cy, 48, 0, Math.PI * 2);
+    radarCtx.stroke();
+
+    // Crosshairs
+    radarCtx.strokeStyle = "rgba(110, 231, 255, 0.18)";
+    radarCtx.beginPath();
+    radarCtx.moveTo(cx, 4); radarCtx.lineTo(cx, h - 4);
+    radarCtx.moveTo(4, cy); radarCtx.lineTo(w - 4, cy);
+    radarCtx.stroke();
+
+    // Player position marker (center bottom)
+    const playerX = cx + (offsetX / DEFAULT_FLIGHT_CONFIG.maxOffset) * 22;
+    const playerY = cy + 32;
+    radarCtx.fillStyle = "#38bdf8";
+    radarCtx.beginPath();
+    radarCtx.moveTo(playerX, playerY - 5);
+    radarCtx.lineTo(playerX - 4, playerY + 4);
+    radarCtx.lineTo(playerX + 4, playerY + 4);
+    radarCtx.closePath();
+    radarCtx.fill();
+
+    // Query and draw ahead celestial objects
+    const ahead = chunkRenderer.getAheadCorridorObjects(shipZ, 260);
+    for (const obj of ahead) {
+      const normZ = obj.deltaZ / 260; // 0 (near) to 1 (far)
+      const objY = cy + 32 - normZ * 70;
+      const objX = cx + ((obj.x - (state.basePosition?.x || 0)) / DEFAULT_FLIGHT_CONFIG.maxOffset) * 26;
+
+      if (objX < 6 || objX > w - 6 || objY < 6 || objY > h - 6) continue;
+
+      if (obj.type === "ring") {
+        radarCtx.fillStyle = "#22d3ee";
+        radarCtx.beginPath();
+        radarCtx.arc(objX, objY, 2.5, 0, Math.PI * 2);
+        radarCtx.fill();
+      } else if (obj.type === "stargate") {
+        radarCtx.strokeStyle = "#fbbf24";
+        radarCtx.lineWidth = 1.5;
+        radarCtx.strokeRect(objX - 3, objY - 3, 6, 6);
+      } else if (obj.type === "asteroid") {
+        radarCtx.fillStyle = "#f97316";
+        radarCtx.beginPath();
+        radarCtx.arc(objX, objY, 2.0, 0, Math.PI * 2);
+        radarCtx.fill();
+      } else if (obj.type === "singularity") {
+        radarCtx.fillStyle = "#c084fc";
+        radarCtx.beginPath();
+        radarCtx.arc(objX, objY, 4.0, 0, Math.PI * 2);
+        radarCtx.fill();
+      } else {
+        radarCtx.fillStyle = "#a7f3d0";
+        radarCtx.fillRect(objX - 2, objY - 2, 4, 4);
+      }
+    }
+  }
+
+  function drawAudioVisualizer() {
+    if (!vizCtx || !vizCanvas) return;
+    const w = vizCanvas.width;
+    const h = vizCanvas.height;
+    vizCtx.clearRect(0, 0, w, h);
+
+    const freqData = soundManager.getAudioFrequencies();
+    const barCount = 5;
+    const barWidth = 3;
+    const gap = 3;
+    const totalW = barCount * barWidth + (barCount - 1) * gap; // 5*3 + 4*3 = 27
+    const startX = Math.floor((w - totalW) / 2);
+
+    for (let i = 0; i < barCount; i++) {
+      let val = 0.3;
+      if (freqData && freqData.length > 0) {
+        val = (freqData[i * 3] || 25) / 255;
+      } else {
+        val = 0.25 + Math.sin(state.elapsed * 4.5 + i * 1.3) * 0.22;
+      }
+      val = Math.max(0.15, Math.min(1.0, val));
+      const barH = Math.max(2, Math.round(val * (h - 2)));
+      vizCtx.fillStyle = `hsl(${180 + i * 18}, 95%, 65%)`;
+      vizCtx.fillRect(startX + i * (barWidth + gap), h - barH, barWidth, barH);
+    }
+  }
+
+  // 8. UI Helpers & Banners
   function showSectorBanner(biomeData) {
     const banner = document.getElementById("sectorBanner");
     const numEl = document.getElementById("sectorNum");
@@ -137,11 +240,36 @@ export function startGame() {
     const compassHeading = document.getElementById("compassHeading");
     const compassNext = document.getElementById("compassNext");
 
+    // Shield Elements
+    const shieldFill = document.getElementById("shieldFill");
+    const shieldVal = document.getElementById("shieldVal");
+
+    // Score & Combo Elements
+    const scoreVal = document.getElementById("driftScoreVal");
+    const comboBadge = document.getElementById("comboBadge");
+    const comboMultiplier = document.getElementById("comboMultiplier");
+
     if (speedNum) speedNum.textContent = Math.round(st.speed);
     if (speedFill) speedFill.style.width = Math.min(100, Math.round((st.speed / DEFAULT_FLIGHT_CONFIG.boostSpeed) * 100)) + "%";
     if (distNum) distNum.textContent = Math.round(st.shipZ) + " ly traveled";
     if (ringCountEl) ringCountEl.textContent = ringScore;
     if (streakCountEl) streakCountEl.textContent = ringStreak;
+
+    // Shield Telemetry
+    if (shieldFill && shieldVal) {
+      const energyPct = Math.round(st.shieldEnergy !== undefined ? st.shieldEnergy : 100);
+      shieldFill.style.width = `${energyPct}%`;
+      shieldFill.style.background = st.shieldActive ? "linear-gradient(90deg, #38bdf8, #6ee7ff)" : "linear-gradient(90deg, #0284c7, #38bdf8)";
+      shieldVal.textContent = `${energyPct}%`;
+    }
+
+    // Score & Combo Telemetry
+    if (scoreVal) scoreVal.textContent = Math.round(st.driftScore || 0);
+    if (comboBadge && comboMultiplier) {
+      const isComboActive = (st.comboMultiplier || 1.0) > 1.0;
+      comboBadge.classList.toggle("visible", isComboActive);
+      comboMultiplier.textContent = `x${(st.comboMultiplier || 1.0).toFixed(1)}`;
+    }
 
     // Horizon Compass update
     if (compassHeading && compassNext) {
@@ -163,22 +291,29 @@ export function startGame() {
         }
       }
     }
+
+    // Draw Real-time Radar & Audio Visualizer
+    drawTacticalRadar(st.shipZ, st.offsetX, st.offsetY);
+    drawAudioVisualizer();
   }
 
   function updateCodexModal() {
     const lifetimeEl = document.getElementById("codexLifetime");
     const ringsEl = document.getElementById("codexRings");
     const gatesEl = document.getElementById("codexGates");
-    const warpsEl = document.getElementById("codexWarps");
+    const highScoreEl = document.getElementById("codexHighScore");
+    const maxComboEl = document.getElementById("codexMaxCombo");
+    const deflectionsEl = document.getElementById("codexDeflections");
     const sectorList = document.getElementById("codexSectorList");
-
     const anomalyList = document.getElementById("codexAnomalyList");
 
     const totalZ = codex.totalDistance + Math.round(state.shipZ);
     if (lifetimeEl) lifetimeEl.textContent = totalZ;
     if (ringsEl) ringsEl.textContent = codex.ringsCollected;
     if (gatesEl) gatesEl.textContent = codex.stargatesPassed;
-    if (warpsEl) warpsEl.textContent = codex.hyperspaceJumps;
+    if (highScoreEl) highScoreEl.textContent = Math.max(codex.highScore || 0, Math.round(state.driftScore || 0));
+    if (maxComboEl) maxComboEl.textContent = `x${(codex.maxCombo || 1.0).toFixed(1)}`;
+    if (deflectionsEl) deflectionsEl.textContent = codex.asteroidsDeflected || 0;
 
     if (sectorList) {
       sectorList.innerHTML = "";
@@ -374,6 +509,18 @@ export function startGame() {
     });
   });
 
+  // Exhaust Theme Selector
+  document.querySelectorAll("#exhaustThemeGrid .theme-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const exhaustKey = card.getAttribute("data-exhaust");
+      if (exhaustKey) {
+        effectsManager.setExhaustType(exhaustKey);
+        document.querySelectorAll("#exhaustThemeGrid .theme-card").forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+      }
+    });
+  });
+
   // Hyperspace Warp Palette Selector
   document.querySelectorAll("#warpThemeGrid .theme-card").forEach((card) => {
     card.addEventListener("click", () => {
@@ -385,6 +532,46 @@ export function startGame() {
       }
     });
   });
+
+  // Custom Audio File Import (Drag & Drop + File Input)
+  const audioZone = document.getElementById("customAudioZone");
+  const audioInput = document.getElementById("customAudioInput");
+  const loadedTrackName = document.getElementById("loadedTrackName");
+
+  async function handleAudioFile(file) {
+    if (!file) return;
+    try {
+      userInteracted();
+      if (loadedTrackName) loadedTrackName.textContent = "Decoding audio...";
+      const trackName = await soundManager.loadCustomAudio(file);
+      if (loadedTrackName) loadedTrackName.textContent = `▶ Loaded: ${trackName}`;
+      const radioLabel = document.getElementById("radioLabel");
+      if (radioLabel) radioLabel.textContent = "Custom Space Deck";
+    } catch (err) {
+      if (loadedTrackName) loadedTrackName.textContent = "Error decoding audio file.";
+    }
+  }
+
+  audioInput?.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleAudioFile(file);
+  });
+
+  if (audioZone) {
+    audioZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      audioZone.classList.add("dragover");
+    });
+    audioZone.addEventListener("dragleave", () => {
+      audioZone.classList.remove("dragover");
+    });
+    audioZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      audioZone.classList.remove("dragover");
+      const file = e.dataTransfer?.files?.[0];
+      if (file) handleAudioFile(file);
+    });
+  }
 
   // Photo Mode Controls
   document.getElementById("photoFilterBtn")?.addEventListener("click", () => {
@@ -410,7 +597,7 @@ export function startGame() {
     photoManager.handleWheel(e.deltaY);
   }, { passive: true });
 
-  // Global Key Triggers (T, U, R, V, L, M, C, Z, P, H)
+  // Global Key Triggers (T, U, R, V, L, M, C, Z, P, H, E)
   window.addEventListener("keydown", (e) => {
     if (e.repeat) return;
     if (e.code === "KeyT") cycleRadio();
@@ -429,6 +616,10 @@ export function startGame() {
     if (e.code === "KeyH") {
       userInteracted();
       shipModal?.classList.toggle("visible");
+    }
+    if (e.code === "KeyE") {
+      userInteracted();
+      soundManager.playShieldActivate();
     }
   });
 
@@ -530,6 +721,35 @@ export function startGame() {
           codex = recordAnomalyDiscovery(codex, "pulsar");
         });
 
+        // Gravitational Singularity Event Horizon Encounters
+        chunkRenderer.checkSingularityEncounters(state.position, () => {
+          soundManager.playChime(0.7);
+          gamepadManager.pulseHaptic(300, 0.7, 0.4);
+          codex = recordAnomalyDiscovery(codex, "singularity");
+        });
+
+        // Asteroid Hazard Field Deflections & Impacts
+        chunkRenderer.checkAsteroidCollisions(
+          state.position,
+          state.shieldActive,
+          () => {
+            // Deflected by active Energy Shield
+            effectsManager.triggerShieldHit();
+            soundManager.playShieldDeflect();
+            gamepadManager.pulseHaptic(180, 0.5, 0.2);
+            codex.asteroidsDeflected = (codex.asteroidsDeflected || 0) + 1;
+            state.driftScore = (state.driftScore || 0) + Math.round(250 * (state.comboMultiplier || 1));
+          },
+          () => {
+            // Impact without shield
+            soundManager.playImpact();
+            gamepadManager.pulseHaptic(350, 0.8, 0.5);
+            // Reset combo on collision
+            state.comboMultiplier = 1.0;
+            state.consecutiveDriftTime = 0;
+          }
+        );
+
         // Zen Meditation Mode visual timer & breathing rhythm
         if (isZenMode) {
           zenTimerSeconds += delta;
@@ -548,10 +768,16 @@ export function startGame() {
           }
         }
 
-        // Periodic distance save to localStorage
+        // Periodic distance & high score save to localStorage
         if (state.shipZ - lastSaveZ >= 100) {
           codex.totalDistance += Math.round(state.shipZ - lastSaveZ);
           lastSaveZ = state.shipZ;
+          if (state.driftScore > (codex.highScore || 0)) {
+            codex.highScore = state.driftScore;
+          }
+          if ((state.comboMultiplier || 1.0) > (codex.maxCombo || 1.0)) {
+            codex.maxCombo = state.comboMultiplier;
+          }
           saveCodex(codex);
         }
 

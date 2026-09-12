@@ -10,30 +10,39 @@ export const WARP_THEMES = Object.freeze({
   rainbow: { id: "rainbow", name: "Prism Rainbow", color: 0xffffff, hex: "linear-gradient(90deg, #ff4e50, #f9d423, #6ee7ff)", isRainbow: true },
 });
 
+export const EXHAUST_TYPES = Object.freeze({
+  ion: { id: "ion", name: "Ion Plasma", color: 0x6ee7ff, particleColor: 0x8fd6ff, size: 2.2 },
+  solar: { id: "solar", name: "Solar Flare", color: 0xffaa22, particleColor: 0xff6600, size: 2.8 },
+  void: { id: "void", name: "Void Stream", color: 0xc084fc, particleColor: 0xff3b94, size: 2.5 },
+  emerald: { id: "emerald", name: "Emerald Photon", color: 0x2ef8a0, particleColor: 0x5eead4, size: 2.2 },
+});
+
 /**
  * Creates and manages dynamic visual effects:
+ * - Volumetric Hyperspace Warp Tunnel
+ * - Selectable Engine Exhaust Systems
+ * - Hexagonal Energy Shield Deflector Bubble
  * - Dual Engine Thruster Ribbon Trails
  * - Space Drift Side Thruster Spark Particles
  * - Floating Cosmic Stardust Motes
- * - Customizable Warp Speed Streaks & Hyperspace Tunnel Jump
+ * - Customizable Warp Speed Streaks
  * - Aurora Flight Corridor Ribbon
- * - Streaking Sky Comets
- * - Celestial Constellation Line Maps
- * - Ion Particle Showers
+ * - Streaking Sky Comets & Constellations
  */
 export class EffectsManager {
   constructor(scene, glowTexture) {
     this.scene = scene;
     this.glowTexture = glowTexture;
 
-    // Engine Trails
-    this.trailLength = 32;
+    // Engine Trails & Exhaust Customizer
+    this.currentExhaustKey = "ion";
+    this.trailLength = 34;
     this.leftTrailPoints = [];
     this.rightTrailPoints = [];
     this.trailMesh = null;
 
     // Drift Sparks
-    this.sparksCount = 100;
+    this.sparksCount = 120;
     this.sparksMesh = null;
     this.sparkData = [];
 
@@ -45,12 +54,17 @@ export class EffectsManager {
     this.ionRain = null;
     this.ionRainCount = 250;
 
-    // Warp & Hyperspace Lines
+    // Warp & Hyperspace Volumetric Tunnel
     this.warpLines = null;
-    this.warpCount = 220;
+    this.warpCount = 240;
     this.hyperspaceActive = false;
     this.hyperspaceTimer = 0;
     this.currentWarpThemeKey = "cyan";
+    this.warpTunnelMesh = null;
+
+    // Energy Shield Bubble
+    this.shieldMesh = null;
+    this.shieldHitIntensity = 0;
 
     // Aurora Ribbon
     this.ribbonSegments = 60;
@@ -73,9 +87,17 @@ export class EffectsManager {
     this.initStardust();
     this.initIonRain();
     this.initWarpLines();
+    this.initWarpTunnel();
+    this.initEnergyShield();
     this.initAuroraRibbon();
     this.initComet();
     this.initConstellations();
+  }
+
+  setExhaustType(typeKey) {
+    if (EXHAUST_TYPES[typeKey]) {
+      this.currentExhaustKey = typeKey;
+    }
   }
 
   setWarpTheme(themeKey) {
@@ -84,7 +106,53 @@ export class EffectsManager {
       if (this.warpLines && !WARP_THEMES[themeKey].isRainbow) {
         this.warpLines.material.color.setHex(WARP_THEMES[themeKey].color);
       }
+      if (this.warpTunnelMesh && !WARP_THEMES[themeKey].isRainbow) {
+        this.warpTunnelMesh.material.color.setHex(WARP_THEMES[themeKey].color);
+      }
     }
+  }
+
+  initWarpTunnel() {
+    const geo = new THREE.CylinderGeometry(24, 24, 220, 24, 16, true);
+    geo.rotateX(Math.PI / 2); // align along Z
+
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0x6ee7ff,
+      wireframe: true,
+      transparent: true,
+      opacity: 0,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    this.warpTunnelMesh = new THREE.Mesh(geo, mat);
+    this.warpTunnelMesh.frustumCulled = false;
+    this.scene.add(this.warpTunnelMesh);
+  }
+
+  initEnergyShield() {
+    const geo = new THREE.IcosahedronGeometry(3.6, 2);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.85,
+      roughness: 0.1,
+      metalness: 0.9,
+      wireframe: true,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    this.shieldMesh = new THREE.Mesh(geo, mat);
+    this.shieldMesh.frustumCulled = false;
+    this.scene.add(this.shieldMesh);
+  }
+
+  triggerShieldHit() {
+    this.shieldHitIntensity = 1.0;
   }
 
   initDriftSparks() {
@@ -331,7 +399,10 @@ export class EffectsManager {
   update(ship, state, isBoost, trailColorHex = 0x8fd6ff, delta = 0.016) {
     const shipPos = state.position;
 
-    // 1. Engine Trail
+    // 1. Engine Trail & Exhaust Selection
+    const exhaust = EXHAUST_TYPES[this.currentExhaustKey] || EXHAUST_TYPES.ion;
+    const activeTrailHex = exhaust.color || trailColorHex;
+
     const leftLocal = new THREE.Vector3(1.2, 0, -1.8);
     const rightLocal = new THREE.Vector3(-1.2, 0, -1.8);
     leftLocal.applyMatrix4(ship.matrixWorld);
@@ -347,7 +418,7 @@ export class EffectsManager {
 
     const posAttr = this.trailMesh.geometry.attributes.position;
     const colAttr = this.trailMesh.geometry.attributes.color;
-    const colObj = new THREE.Color(trailColorHex);
+    const colObj = new THREE.Color(activeTrailHex);
 
     for (let i = 0; i < this.leftTrailPoints.length - 1; i++) {
       const p1 = this.leftTrailPoints[i];
@@ -371,7 +442,34 @@ export class EffectsManager {
     posAttr.needsUpdate = true;
     colAttr.needsUpdate = true;
 
-    // 2. Space Drift Side Thruster Sparks
+    // 2. Volumetric Warp Tunnel Update
+    if (this.warpTunnelMesh) {
+      this.warpTunnelMesh.position.set(shipPos.x, shipPos.y, shipPos.z + 80);
+      this.warpTunnelMesh.rotation.z += delta * (this.hyperspaceActive ? 3.5 : 0.5);
+      const targetTunnelOpacity = this.hyperspaceActive ? 0.85 : 0;
+      this.warpTunnelMesh.material.opacity += (targetTunnelOpacity - this.warpTunnelMesh.material.opacity) * Math.min(1, delta * 8);
+      this.warpTunnelMesh.visible = this.warpTunnelMesh.material.opacity > 0.01;
+    }
+
+    // 3. Energy Shield Bubble Update
+    if (this.shieldMesh) {
+      this.shieldMesh.position.set(shipPos.x, shipPos.y, shipPos.z);
+      this.shieldMesh.rotation.y += delta * 1.5;
+      this.shieldMesh.rotation.x += delta * 0.8;
+
+      if (this.shieldHitIntensity > 0) {
+        this.shieldHitIntensity = Math.max(0, this.shieldHitIntensity - delta * 3.5);
+      }
+
+      const targetShieldOpacity = state.shieldActive ? 0.75 + this.shieldHitIntensity * 0.25 : 0;
+      this.shieldMesh.material.opacity += (targetShieldOpacity - this.shieldMesh.material.opacity) * Math.min(1, delta * 12);
+      this.shieldMesh.visible = this.shieldMesh.material.opacity > 0.01;
+
+      const scale = 1.0 + this.shieldHitIntensity * 0.35 + Math.sin(state.elapsed * 6) * 0.04;
+      this.shieldMesh.scale.set(scale, scale, scale);
+    }
+
+    // 4. Space Drift Side Thruster Sparks
     if (this.sparksMesh) {
       const spPositions = this.sparksMesh.geometry.attributes.position;
       const spColors = this.sparksMesh.geometry.attributes.color;
@@ -415,7 +513,7 @@ export class EffectsManager {
       spColors.needsUpdate = true;
     }
 
-    // 3. Stardust update
+    // 5. Stardust update
     const dustPositions = this.stardust.geometry.attributes.position;
     const halfRange = this.stardustRange * 0.5;
 
@@ -435,7 +533,7 @@ export class EffectsManager {
     }
     dustPositions.needsUpdate = true;
 
-    // 4. Ion Rain update
+    // 6. Ion Rain update
     if (this.ionRain) {
       const rainPos = this.ionRain.geometry.attributes.position;
       const rainRange = 140;
@@ -457,7 +555,7 @@ export class EffectsManager {
       this.ionRain.geometry.attributes.position.needsUpdate = true;
     }
 
-    // 5. Warp Lines
+    // 7. Warp Lines
     if (this.hyperspaceTimer > 0) {
       this.hyperspaceTimer -= delta;
       if (this.hyperspaceTimer <= 0) this.hyperspaceActive = false;
@@ -490,7 +588,7 @@ export class EffectsManager {
       warpPos.needsUpdate = true;
     }
 
-    // 5. Aurora Flight Ribbon
+    // 8. Aurora Flight Ribbon
     if (this.ribbonVisible && this.ribbonMesh) {
       const ribPos = this.ribbonMesh.geometry.attributes.position;
       const ribCol = this.ribbonMesh.geometry.attributes.color;
@@ -513,12 +611,12 @@ export class EffectsManager {
       ribCol.needsUpdate = true;
     }
 
-    // 6. Constellation following forward
+    // 9. Constellation following forward
     if (this.constellationMesh) {
       this.constellationMesh.position.z = shipPos.z;
     }
 
-    // 7. Streaking Comet
+    // 10. Streaking Comet
     this.updateComet(shipPos, delta);
   }
 
@@ -581,6 +679,16 @@ export class EffectsManager {
       this.scene.remove(this.warpLines);
       this.warpLines.geometry.dispose();
       this.warpLines.material.dispose();
+    }
+    if (this.warpTunnelMesh) {
+      this.scene.remove(this.warpTunnelMesh);
+      this.warpTunnelMesh.geometry.dispose();
+      this.warpTunnelMesh.material.dispose();
+    }
+    if (this.shieldMesh) {
+      this.scene.remove(this.shieldMesh);
+      this.shieldMesh.geometry.dispose();
+      this.shieldMesh.material.dispose();
     }
     if (this.ribbonMesh) {
       this.scene.remove(this.ribbonMesh);

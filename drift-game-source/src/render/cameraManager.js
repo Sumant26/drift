@@ -52,7 +52,7 @@ export class CameraManager {
     const base = state.basePosition || state.position;
     const pos = state.position;
     const isBoost = input.boost;
-    const inputX = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+    const inputX = (input.left ? 1 : 0) - (input.right ? 1 : 0);
 
     // Dynamic FOV interpolation
     const destFov = isBoost ? this.boostFov : this.baseFov;

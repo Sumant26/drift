@@ -43,4 +43,8 @@ describe("generateChunkData", () => {
   it("accepts negative indices (behind the starting point)", () => {
     expect(() => generateChunkData(-3)).not.toThrow();
   });
+  it("generates asteroids array in chunks with positive index", () => {
+    const data = generateChunkData(2);
+    expect(Array.isArray(data.asteroids)).toBe(true);
+  });
 });

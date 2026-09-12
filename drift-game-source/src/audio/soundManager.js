@@ -7,6 +7,7 @@ export const RADIO_STATIONS = [
   { id: "cosmic", name: "Deep Cosmic Chill", genre: "Ambient Synthscape" },
   { id: "lofi", name: "Lo-Fi Space Haze", genre: "Warm Rhodes & Dust" },
   { id: "cyber", name: "Cyber Analog Wave", genre: "80s Stellar Chorus" },
+  { id: "custom", name: "Custom Space Deck", genre: "Imported Audio Track" },
   { id: "silence", name: "Stellar Silence", genre: "SFX Only" },
 ];
 
@@ -22,6 +23,16 @@ export class SoundManager {
     this.engineFilter = null;
     this.isMuted = false;
     this.initialized = false;
+
+    // Real-time Beat / Spectrum Analyser
+    this.analyser = null;
+    this.freqData = null;
+
+    // Custom Audio Importer
+    this.customSource = null;
+    this.customBuffer = null;
+    this.customTrackName = "";
+    this.isCustomPlaying = false;
 
     // Independent volume settings (0.0 to 1.0)
     this.volumes = {
@@ -94,10 +105,17 @@ export class SoundManager {
       if (!AudioCtx) return;
       this.ctx = new AudioCtx();
 
-      // Master output bus
+      // Master output bus & Spectrum Analyser
       this.masterGain = this.ctx.createGain();
       this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : this.volumes.master, this.ctx.currentTime);
-      this.masterGain.connect(this.ctx.destination);
+
+      this.analyser = this.ctx.createAnalyser();
+      this.analyser.fftSize = 64;
+      this.analyser.smoothingTimeConstant = 0.8;
+      this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
+
+      this.masterGain.connect(this.analyser);
+      this.analyser.connect(this.ctx.destination);
 
       // Music Bus
       this.musicBus = this.ctx.createGain();
@@ -379,6 +397,107 @@ export class SoundManager {
     osc2.stop(now + 2.5);
   }
 
+  playShieldActivate() {
+    if (!this.ctx || this.isMuted || this.ctx.state !== "running") return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(240, now);
+    osc.frequency.exponentialRampToValueAtTime(780, now + 0.25);
+
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain || this.masterGain);
+
+    osc.start(now);
+    osc.stop(now + 0.36);
+  }
+
+  playShieldDeflect() {
+    if (!this.ctx || this.isMuted || this.ctx.state !== "running") return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(620, now);
+    osc.frequency.exponentialRampToValueAtTime(140, now + 0.3);
+
+    gain.gain.setValueAtTime(0.28, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain || this.masterGain);
+    gain.connect(this.delayNode);
+
+    osc.start(now);
+    osc.stop(now + 0.33);
+  }
+
+  playImpact() {
+    if (!this.ctx || this.isMuted || this.ctx.state !== "running") return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.exponentialRampToValueAtTime(35, now + 0.4);
+
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain || this.masterGain);
+
+    osc.start(now);
+    osc.stop(now + 0.45);
+  }
+
+  getAudioFrequencies() {
+    if (!this.analyser || !this.freqData) return null;
+    this.analyser.getByteFrequencyData(this.freqData);
+    return this.freqData;
+  }
+
+  async loadCustomAudio(file) {
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+      this.customBuffer = audioBuffer;
+      this.customTrackName = file.name || "Custom Track";
+
+      if (this.customSource) {
+        try { this.customSource.stop(); } catch (_) {}
+      }
+
+      this.customSource = this.ctx.createBufferSource();
+      this.customSource.buffer = this.customBuffer;
+      this.customSource.loop = true;
+      this.customSource.connect(this.musicBus);
+      this.customSource.start(0);
+      this.isCustomPlaying = true;
+
+      // Switch radio to custom station
+      const customStation = RADIO_STATIONS.find(s => s.id === "custom");
+      if (customStation) {
+        this.currentStation = customStation;
+        this.stationIndex = RADIO_STATIONS.indexOf(customStation);
+      }
+      return this.customTrackName;
+    } catch (err) {
+      console.warn("Failed to load custom audio:", err);
+      throw err;
+    }
+  }
+
   update(speed, isBoost, delta, biomeId = "opal-nebula") {
     if (!this.initialized) return;
     if (this.ctx && this.ctx.state === "suspended") {
@@ -388,7 +507,7 @@ export class SoundManager {
 
     const now = this.ctx.currentTime;
 
-    if (this.currentStation.id !== "silence") {
+    if (this.currentStation.id !== "silence" && this.currentStation.id !== "custom") {
       if (now >= this.nextChordTime) {
         this.triggerAmbientPad(biomeId);
         this.nextChordTime = now + 6.8;
@@ -424,6 +543,9 @@ export class SoundManager {
   }
 
   dispose() {
+    if (this.customSource) {
+      try { this.customSource.stop(); } catch (_) {}
+    }
     if (this.ctx) {
       this.ctx.close().catch(() => {});
       this.ctx = null;

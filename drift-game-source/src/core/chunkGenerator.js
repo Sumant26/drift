@@ -208,5 +208,25 @@ export function generateChunkData(index, config = DEFAULT_CHUNK_CONFIG) {
     };
   }
 
-  return { index, zStart, zEnd, hue, crystals, nebula, planet, rings, stargate, singularity, fauna, ufo, ufos, pulsar, beacon, comet, biomeData };
+  // Floating Cosmic Asteroid Fields (Sparse, atmospheric celestial obstacles)
+  const asteroids = [];
+  if (index > 0 && rand() < 0.28) {
+    const asteroidCount = 1 + Math.floor(rand() * 2);
+    for (let a = 0; a < asteroidCount; a++) {
+      const aZ = zStart + cfg.chunkLength * (0.25 + a * 0.45 + (rand() - 0.5) * 0.1);
+      const angle = rand() * Math.PI * 2;
+      const offsetDist = 8 + rand() * 16;
+      asteroids.push({
+        id: `asteroid-${index}-${a}`,
+        x: pathX(aZ) + Math.cos(angle) * offsetDist,
+        y: pathY(aZ) + Math.sin(angle) * (offsetDist * 0.7),
+        z: aZ,
+        radius: 2.4 + rand() * 2.8,
+        rotSpeed: { x: (rand() - 0.5) * 1.2, y: (rand() - 0.5) * 1.2, z: (rand() - 0.5) * 1.2 },
+        variant: Math.floor(rand() * 3),
+      });
+    }
+  }
+
+  return { index, zStart, zEnd, hue, crystals, nebula, planet, rings, stargate, singularity, fauna, ufo, ufos, pulsar, beacon, comet, asteroids, biomeData };
 }

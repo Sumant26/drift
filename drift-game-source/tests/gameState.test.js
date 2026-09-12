@@ -39,16 +39,25 @@ describe("updateFlightState", () => {
 
   it("never lets offsetX exceed maxOffset even after sustained input", () => {
     let state = createInitialState();
-    const input = { ...createInputState(), right: true };
+    const input = { ...createInputState(), left: true };
     for (let i = 0; i < 500; i++) {
       state = updateFlightState(state, input, 0.1);
     }
     expect(state.offsetX).toBeLessThanOrEqual(DEFAULT_FLIGHT_CONFIG.maxOffset + 1e-6);
   });
 
-  it("moves offsetX negative when steering left", () => {
+  it("moves offsetX positive (+X in 3D world, screen left) when steering left", () => {
     let state = createInitialState();
     const input = { ...createInputState(), left: true };
+    for (let i = 0; i < 50; i++) {
+      state = updateFlightState(state, input, 0.05);
+    }
+    expect(state.offsetX).toBeGreaterThan(0);
+  });
+
+  it("moves offsetX negative (-X in 3D world, screen right) when steering right", () => {
+    let state = createInitialState();
+    const input = { ...createInputState(), right: true };
     for (let i = 0; i < 50; i++) {
       state = updateFlightState(state, input, 0.05);
     }
@@ -79,11 +88,30 @@ describe("updateFlightState", () => {
 
   it("enables drift mode with enhanced banking and wider max offset", () => {
     let state = createInitialState();
-    const input = { ...createInputState(), right: true, drift: true };
+    const input = { ...createInputState(), left: true, drift: true };
     for (let i = 0; i < 500; i++) {
       state = updateFlightState(state, input, 0.05);
     }
     expect(state.isDrifting).toBe(true);
     expect(state.offsetX).toBeGreaterThan(DEFAULT_FLIGHT_CONFIG.maxOffset);
+  });
+
+  it("activates energy shield and drains shield energy when shield input held", () => {
+    let state = createInitialState();
+    expect(state.shieldEnergy).toBe(100);
+    const input = { ...createInputState(), shield: true };
+    state = updateFlightState(state, input, 1.0);
+    expect(state.shieldActive).toBe(true);
+    expect(state.shieldEnergy).toBeLessThan(100);
+  });
+
+  it("accumulates drift combo multiplier when drifting continuously", () => {
+    let state = createInitialState();
+    const input = { ...createInputState(), left: true, drift: true };
+    for (let i = 0; i < 40; i++) {
+      state = updateFlightState(state, input, 0.1);
+    }
+    expect(state.comboMultiplier).toBeGreaterThan(1.0);
+    expect(state.driftScore).toBeGreaterThan(0);
   });
 });

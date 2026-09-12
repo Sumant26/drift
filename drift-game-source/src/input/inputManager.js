@@ -8,10 +8,11 @@ export const KEY_MAP = Object.freeze({
   ArrowDown: "down", KeyS: "down",
   ShiftLeft: "boost", ShiftRight: "boost",
   Space: "drift",
+  KeyE: "shield",
 });
 
 export function createInputState() {
-  return { left: false, right: false, up: false, down: false, boost: false, drift: false };
+  return { left: false, right: false, up: false, down: false, boost: false, drift: false, shield: false };
 }
 
 /**

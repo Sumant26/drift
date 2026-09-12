@@ -5,7 +5,7 @@ import { InputError, ValidationError } from "../src/utils/errors.js";
 describe("createInputState", () => {
   it("starts with every flag false", () => {
     const state = createInputState();
-    expect(state).toEqual({ left: false, right: false, up: false, down: false, boost: false, drift: false });
+    expect(state).toEqual({ left: false, right: false, up: false, down: false, boost: false, drift: false, shield: false });
   });
 });
 

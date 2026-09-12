@@ -4,10 +4,13 @@ const STORAGE_KEY = "drift_traveler_codex_v1";
 
 export const DEFAULT_CODEX_DATA = Object.freeze({
   totalDistance: 0,
+  highScore: 0,
   maxStreak: 0,
+  maxCombo: 1.0,
   ringsCollected: 0,
   stargatesPassed: 0,
   hyperspaceJumps: 0,
+  asteroidsDeflected: 0,
   discoveredSectors: ["opal-nebula"],
   discoveredAnomalies: [],
   firstPlayed: Date.now(),

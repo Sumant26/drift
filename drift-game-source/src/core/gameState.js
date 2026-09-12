@@ -3,12 +3,14 @@ import { pathX, pathY, pathDerivative } from "./path.js";
 import { ValidationError } from "../utils/errors.js";
 
 export const DEFAULT_FLIGHT_CONFIG = Object.freeze({
-  maxOffset: 26,
+  maxOffset: 24,
+  maxOffsetY: 16,
   baseSpeed: 30,
   boostSpeed: 62,
-  offsetSmoothRate: 0.0008,
-  speedSmoothRate: 0.02,
-  bankSmoothRate: 0.001,
+  offsetSmoothRate: 0.025,
+  pitchSmoothRate: 0.045,
+  speedSmoothRate: 0.03,
+  bankSmoothRate: 0.008,
 });
 
 /** Returns a fresh, valid initial game state. */
@@ -26,6 +28,15 @@ export function createInitialState(config = DEFAULT_FLIGHT_CONFIG) {
     basePosition: { x: basePathX, y: basePathY, z: initZ },
     bob: 0,
     elapsed: 0,
+    // Energy Shield System
+    shieldActive: false,
+    shieldEnergy: 100,
+    // Drift Combo & Scoring System
+    driftScore: 0,
+    comboMultiplier: 1.0,
+    comboTimer: 0,
+    consecutiveDriftTime: 0,
+    isDrifting: false,
   };
 }
 
@@ -68,28 +79,35 @@ export function updateFlightState(state, input, delta, config = DEFAULT_FLIGHT_C
 
   const isAutopilot = Boolean(input.autopilot);
   const isDrift = Boolean(input.drift);
-  const rawInputX = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+  const wantsShield = Boolean(input.shield);
+
+  // Three.js right-handed coordinate system facing +Z: +X is screen Left, -X is screen Right.
+  // When pressing left (A / ArrowLeft), move towards +X (screen left).
+  // When pressing right (D / ArrowRight), move towards -X (screen right).
+  const rawInputX = (input.left ? 1 : 0) - (input.right ? 1 : 0);
   const rawInputY = (input.up ? 1 : 0) - (input.down ? 1 : 0);
 
   // In autopilot, automatically center and gently glide
   const inputX = isAutopilot ? (state.offsetX > 0.5 ? -0.3 : state.offsetX < -0.5 ? 0.3 : 0) : rawInputX;
   const inputY = isAutopilot ? (state.offsetY > 0.5 ? -0.3 : state.offsetY < -0.5 ? 0.3 : 0) : rawInputY;
 
-  const currentMaxOffset = isDrift ? config.maxOffset * 1.3 : config.maxOffset;
-  const targetOffsetX = isAutopilot ? 0 : inputX * currentMaxOffset;
-  const targetOffsetY = isAutopilot ? 0 : inputY * config.maxOffset;
+  const currentMaxOffsetX = isDrift ? (config.maxOffset || 24) * 1.3 : (config.maxOffset || 24);
+  const currentMaxOffsetY = config.maxOffsetY || 16;
+  const targetOffsetX = isAutopilot ? 0 : inputX * currentMaxOffsetX;
+  const targetOffsetY = isAutopilot ? 0 : inputY * currentMaxOffsetY;
 
-  const offsetRate = isDrift ? config.offsetSmoothRate * 0.45 : config.offsetSmoothRate;
+  const offsetRate = isDrift ? (config.offsetSmoothRate || 0.025) * 0.5 : (config.offsetSmoothRate || 0.025);
+  const pitchRate = config.pitchSmoothRate || 0.045;
 
   const offsetX = clamp(
     smoothTowards(state.offsetX, targetOffsetX, offsetRate, delta),
-    -currentMaxOffset,
-    currentMaxOffset
+    -currentMaxOffsetX,
+    currentMaxOffsetX
   );
   const offsetY = clamp(
-    smoothTowards(state.offsetY, targetOffsetY, config.offsetSmoothRate, delta),
-    -config.maxOffset,
-    config.maxOffset
+    smoothTowards(state.offsetY, targetOffsetY, pitchRate, delta),
+    -currentMaxOffsetY,
+    currentMaxOffsetY
   );
 
   const targetSpeed = input.boost ? config.boostSpeed : config.baseSpeed;
@@ -99,7 +117,7 @@ export function updateFlightState(state, input, delta, config = DEFAULT_FLIGHT_C
   const elapsed = state.elapsed + delta;
 
   // Gentle, harmonic floating bob
-  const bob = Math.sin(elapsed * 0.9) * 0.5 + Math.sin(elapsed * 1.7 + 1.2) * 0.25;
+  const bob = Math.sin(elapsed * 0.9) * 0.45 + Math.sin(elapsed * 1.7 + 1.2) * 0.2;
 
   const baseX = pathX(shipZ) + offsetX;
   const baseY = pathY(shipZ) + offsetY;
@@ -117,16 +135,65 @@ export function updateFlightState(state, input, delta, config = DEFAULT_FLIGHT_C
   };
 
   const { dx, dy } = pathDerivative(shipZ);
-  const yawFactor = isDrift ? 0.42 : 0.12;
-  const bankFactor = isDrift ? 0.92 : 0.55;
+  const yawFactor = isDrift ? 0.38 : 0.14;
+  const bankFactor = isDrift ? 0.85 : 0.5;
 
   const rotation = {
-    x: lerp(state.rotation.x, inputY * 0.22 - dy * 0.02, 1 - Math.pow(config.bankSmoothRate, delta)),
-    y: lerp(state.rotation.y, -inputX * yawFactor, 1 - Math.pow(config.bankSmoothRate, delta)),
+    x: lerp(state.rotation.x, inputY * 0.18 - dy * 0.02, 1 - Math.pow(config.bankSmoothRate, delta)),
+    y: lerp(state.rotation.y, inputX * yawFactor, 1 - Math.pow(config.bankSmoothRate, delta)),
     z: lerp(state.rotation.z, -inputX * bankFactor - dx * 0.01, 1 - Math.pow(config.bankSmoothRate, delta)),
   };
 
   const isDrifting = isDrift && Math.abs(rawInputX) > 0;
 
-  return { shipZ, offsetX, offsetY, speed, rotation, position, basePosition, bob, elapsed, isDrifting };
+  // Energy Shield Logic
+  let shieldEnergy = state.shieldEnergy !== undefined ? state.shieldEnergy : 100;
+  let shieldActive = false;
+  if (wantsShield && shieldEnergy > 5) {
+    shieldActive = true;
+    shieldEnergy = Math.max(0, shieldEnergy - delta * 22);
+  } else {
+    shieldActive = false;
+    shieldEnergy = Math.min(100, shieldEnergy + delta * 14);
+  }
+
+  // Drift Combo & Score Accumulation
+  let consecutiveDriftTime = state.consecutiveDriftTime || 0;
+  let comboMultiplier = state.comboMultiplier || 1.0;
+  let comboTimer = state.comboTimer || 0;
+  let driftScore = state.driftScore || 0;
+
+  if (isDrifting) {
+    consecutiveDriftTime += delta;
+    comboMultiplier = Math.min(8.0, 1.0 + Math.floor(consecutiveDriftTime * 1.5) * 0.5);
+    comboTimer = 2.5; // refresh combo window
+    driftScore += Math.round(100 * comboMultiplier * delta);
+  } else {
+    consecutiveDriftTime = 0;
+    if (comboTimer > 0) {
+      comboTimer -= delta;
+      if (comboTimer <= 0) {
+        comboMultiplier = 1.0;
+      }
+    }
+  }
+
+  return {
+    shipZ,
+    offsetX,
+    offsetY,
+    speed,
+    rotation,
+    position,
+    basePosition,
+    bob,
+    elapsed,
+    isDrifting,
+    shieldActive,
+    shieldEnergy,
+    driftScore,
+    comboMultiplier,
+    comboTimer,
+    consecutiveDriftTime,
+  };
 }

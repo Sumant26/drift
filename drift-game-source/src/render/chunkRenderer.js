@@ -6,18 +6,105 @@ import { RenderError } from "../utils/errors.js";
 const CRYSTAL_GEOMETRIES = [
   new THREE.IcosahedronGeometry(1, 0),
   new THREE.OctahedronGeometry(1, 0),
-  new THREE.TetrahedronGeometry(1, 0),
+  new THREE.DodecahedronGeometry(1, 0),
+];
+const ASTEROID_GEOMETRIES = [
+  new THREE.DodecahedronGeometry(1, 1),
+  new THREE.IcosahedronGeometry(1, 1),
+  new THREE.DodecahedronGeometry(1, 0),
 ];
 const PLANET_GEOMETRY = new THREE.SphereGeometry(1, 24, 20);
-const RING_GEOMETRY = new THREE.TorusGeometry(6.2, 0.35, 12, 36);
+const RING_OUTER_GEO = new THREE.TorusGeometry(6.2, 0.44, 16, 48);
+const RING_INNER_GEO = new THREE.TorusGeometry(5.2, 0.16, 12, 36);
+const RING_CORE_GEO = new THREE.RingGeometry(0.2, 5.0, 36);
+const RING_MOTE_GEO = new THREE.OctahedronGeometry(0.48, 0);
 const PLANET_RING_GEOMETRY = new THREE.RingGeometry(1.6, 2.6, 32);
 const STARGATE_FRAME_GEO = new THREE.TorusGeometry(16, 1.2, 8, 8);
 const STARGATE_INNER_GEO = new THREE.TorusGeometry(14, 0.4, 12, 32);
 const BLACK_HOLE_GEO = new THREE.SphereGeometry(1, 32, 24);
-const ACCRETION_GEO = new THREE.RingGeometry(1.4, 3.8, 36);
+const ACCRETION_GEO = new THREE.RingGeometry(1.3, 4.2, 48);
+const ACCRETION_OUTER_GEO = new THREE.RingGeometry(4.0, 6.2, 48);
 const UFO_SAUCER_GEO = new THREE.CylinderGeometry(1.8, 2.8, 0.4, 16);
 const UFO_DOME_GEO = new THREE.SphereGeometry(1.0, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5);
 const BEACON_GEO = new THREE.OctahedronGeometry(1.2, 0);
+
+function buildResonanceRingGroup(radius, hue, glowTexture, ringId, ringZ) {
+  const ringGroup = new THREE.Group();
+  const ringColor = new THREE.Color().setHSL(hue, 0.85, 0.65);
+  const accentColor = new THREE.Color().setHSL((hue + 0.14) % 1, 0.92, 0.75);
+
+  // 1. Sleek Outer Metallic Energy Torus
+  const outerMat = new THREE.MeshStandardMaterial({
+    color: ringColor,
+    emissive: ringColor,
+    emissiveIntensity: 1.1,
+    roughness: 0.15,
+    metalness: 0.85,
+  });
+  const outerMesh = new THREE.Mesh(RING_OUTER_GEO, outerMat);
+  ringGroup.add(outerMesh);
+
+  // 2. Inner Harmonic Counter-Rotating Energy Ring
+  const innerMat = new THREE.MeshStandardMaterial({
+    color: accentColor,
+    emissive: accentColor,
+    emissiveIntensity: 1.6,
+    roughness: 0.1,
+    metalness: 0.9,
+  });
+  const innerMesh = new THREE.Mesh(RING_INNER_GEO, innerMat);
+  innerMesh.userData = { isInnerRing: true };
+  ringGroup.add(innerMesh);
+
+  // 3. Holographic Shimmer Diaphragm / Core Portal Field
+  const coreMat = new THREE.MeshBasicMaterial({
+    color: ringColor,
+    transparent: true,
+    opacity: 0.22,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const coreMesh = new THREE.Mesh(RING_CORE_GEO, coreMat);
+  coreMesh.userData = { isCoreField: true, baseOpacity: 0.22 };
+  ringGroup.add(coreMesh);
+
+  // 4. Orbiting Quantum Light Motes / Conductors
+  const motesGroup = new THREE.Group();
+  const moteCount = 4;
+  for (let m = 0; m < moteCount; m++) {
+    const angle = (m / moteCount) * Math.PI * 2;
+    const moteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const mote = new THREE.Mesh(RING_MOTE_GEO, moteMat);
+    mote.position.set(Math.cos(angle) * 6.2, Math.sin(angle) * 6.2, 0);
+    motesGroup.add(mote);
+  }
+  motesGroup.userData = { isMotes: true };
+  ringGroup.add(motesGroup);
+
+  // 5. Luminous Halo Aura Sprite
+  const glowMat = new THREE.SpriteMaterial({
+    map: glowTexture,
+    color: ringColor,
+    transparent: true,
+    opacity: 0.55,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const aura = new THREE.Sprite(glowMat);
+  aura.scale.set(22, 22, 1);
+  ringGroup.add(aura);
+
+  ringGroup.userData = {
+    isRing: true,
+    id: ringId,
+    radius: radius || 6.2,
+    collected: false,
+    initialZ: ringZ,
+    collectTime: 0,
+  };
+  return ringGroup;
+}
 
 function buildFaunaGroup(scale, hue, glowTexture) {
   const faunaGroup = new THREE.Group();
@@ -304,34 +391,12 @@ function buildChunkGroup(chunkData, glowTexture) {
     group.add(planetGroup);
   }
 
-  // Resonance Rings
+  // Resonance Rings (Upgraded Holographic Dual-Ring Portals)
   if (chunkData.rings && chunkData.rings.length > 0) {
     for (const r of chunkData.rings) {
-      const ringColor = new THREE.Color().setHSL(r.hue, 0.75, 0.65);
-      const ringMat = new THREE.MeshStandardMaterial({
-        color: ringColor,
-        emissive: ringColor,
-        emissiveIntensity: 0.8,
-        roughness: 0.2,
-        metalness: 0.8,
-      });
-      const ringMesh = new THREE.Mesh(RING_GEOMETRY, ringMat);
-      ringMesh.position.set(r.x, r.y, r.z);
-      ringMesh.userData = { isRing: true, id: r.id, radius: r.radius, collected: false, initialZ: r.z };
-      group.add(ringMesh);
-
-      const glowMat = new THREE.SpriteMaterial({
-        map: glowTexture,
-        color: ringColor,
-        transparent: true,
-        opacity: 0.45,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      });
-      const sprite = new THREE.Sprite(glowMat);
-      sprite.position.set(r.x, r.y, r.z);
-      sprite.scale.set(16, 16, 1);
-      group.add(sprite);
+      const ringGroup = buildResonanceRingGroup(r.radius, r.hue, glowTexture, r.id, r.z);
+      ringGroup.position.set(r.x, r.y, r.z);
+      group.add(ringGroup);
     }
   }
 
@@ -367,29 +432,88 @@ function buildChunkGroup(chunkData, glowTexture) {
     group.add(gateGroup);
   }
 
-  // Gravitational Singularity / Black Hole
+  // Gravitational Singularity / Relativistic Black Hole
   if (chunkData.singularity) {
     const holeGroup = new THREE.Group();
-    const coreMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+    // 1. Dark Event Horizon Sphere
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0x010204 });
     const coreMesh = new THREE.Mesh(BLACK_HOLE_GEO, coreMat);
     holeGroup.add(coreMesh);
 
-    const diskColor = new THREE.Color(0x38e1ff);
-    const diskMat = new THREE.MeshStandardMaterial({
-      color: diskColor,
-      emissive: diskColor,
-      emissiveIntensity: 1.6,
+    // 2. Swirling Inner Superheated Plasma Accretion Disk
+    const innerColor = new THREE.Color(0x38e1ff);
+    const innerDiskMat = new THREE.MeshStandardMaterial({
+      color: innerColor,
+      emissive: innerColor,
+      emissiveIntensity: 2.2,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.9,
     });
-    const disk = new THREE.Mesh(ACCRETION_GEO, diskMat);
-    disk.rotation.x = Math.PI * 0.35;
-    holeGroup.add(disk);
+    const innerDisk = new THREE.Mesh(ACCRETION_GEO, innerDiskMat);
+    innerDisk.rotation.x = Math.PI * 0.35;
+    innerDisk.userData = { isAccretionDisk: true, rotSpeed: 0.8 };
+    holeGroup.add(innerDisk);
+
+    // 3. Outer Relativistic Photon Ring & Doppler Gradient
+    const outerColor = new THREE.Color(0xc084fc);
+    const outerDiskMat = new THREE.MeshStandardMaterial({
+      color: outerColor,
+      emissive: outerColor,
+      emissiveIntensity: 1.4,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.65,
+    });
+    const outerDisk = new THREE.Mesh(ACCRETION_OUTER_GEO, outerDiskMat);
+    outerDisk.rotation.x = Math.PI * 0.35;
+    outerDisk.userData = { isAccretionDisk: true, rotSpeed: 0.4 };
+    holeGroup.add(outerDisk);
+
+    // 4. Gravitational Lensing Distortion Aura
+    const lensAuraMat = new THREE.SpriteMaterial({
+      map: glowTexture,
+      color: 0x818cf8,
+      transparent: true,
+      opacity: 0.75,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const lensSprite = new THREE.Sprite(lensAuraMat);
+    lensSprite.scale.set(16, 16, 1);
+    holeGroup.add(lensSprite);
 
     holeGroup.position.set(chunkData.singularity.x, chunkData.singularity.y, chunkData.singularity.z);
     holeGroup.scale.setScalar(chunkData.singularity.radius);
+    holeGroup.userData = { isSingularity: true, id: chunkData.singularity.id, radius: chunkData.singularity.radius, encountered: false };
     group.add(holeGroup);
+  }
+
+  // Floating Cosmic Asteroids
+  if (chunkData.asteroids && chunkData.asteroids.length > 0) {
+    for (const a of chunkData.asteroids) {
+      const rockMat = new THREE.MeshStandardMaterial({
+        color: 0x475569,
+        roughness: 0.9,
+        metalness: 0.3,
+        flatShading: true,
+      });
+      const rockMesh = new THREE.Mesh(ASTEROID_GEOMETRIES[a.variant || 0], rockMat);
+      rockMesh.position.set(a.x, a.y, a.z);
+      rockMesh.scale.setScalar(a.radius);
+      rockMesh.userData = {
+        isAsteroid: true,
+        id: a.id,
+        radius: a.radius,
+        rotSpeed: a.rotSpeed,
+        deflected: false,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+      };
+      group.add(rockMesh);
+    }
   }
 
   // Astral Space Fauna (Space Manta)
@@ -503,6 +627,104 @@ export class ChunkRenderer {
             child.rotation.z += 0.06;
             child.rotation.x += 0.03;
           }
+          if (child.userData.isSingularity) {
+            for (const sub of child.children) {
+              if (sub.userData && sub.userData.isAccretionDisk) {
+                sub.rotation.z += 0.02 * (sub.userData.rotSpeed || 1);
+              }
+            }
+          }
+          if (child.userData.isRing) {
+            if (!child.userData.collected) {
+              child.rotation.z += 0.014;
+              for (const sub of child.children) {
+                if (sub.userData && sub.userData.isInnerRing) {
+                  sub.rotation.z -= 0.028;
+                }
+                if (sub.userData && sub.userData.isMotes) {
+                  sub.rotation.z += 0.038;
+                }
+                if (sub.userData && sub.userData.isCoreField && sub.material) {
+                  sub.material.opacity = sub.userData.baseOpacity + Math.sin(elapsed * 4 + child.position.z * 0.1) * 0.08;
+                }
+              }
+            } else {
+              child.userData.collectTime = (child.userData.collectTime || 0) + 0.016;
+              const progress = Math.min(1.0, child.userData.collectTime / 0.45);
+              const sc = 1.0 + progress * 1.6;
+              child.scale.set(sc, sc, sc);
+              child.rotation.z += 0.06;
+              for (const sub of child.children) {
+                if (sub.material) {
+                  sub.material.opacity = Math.max(0, 1.0 - progress);
+                }
+              }
+              if (progress >= 1.0) {
+                child.visible = false;
+              }
+            }
+          }
+          if (child.userData.isAsteroid) {
+            const sp = child.userData.rotSpeed || { x: 0.01, y: 0.01, z: 0.01 };
+            child.rotation.x += sp.x * 0.02;
+            child.rotation.y += sp.y * 0.02;
+            child.rotation.z += sp.z * 0.02;
+
+            if (child.userData.deflected) {
+              child.position.x += child.userData.vx * 0.016;
+              child.position.y += child.userData.vy * 0.016;
+              child.position.z += child.userData.vz * 0.016;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  checkAsteroidCollisions(shipPos, shieldActive, onDeflect, onHit) {
+    for (const group of this.loaded.values()) {
+      for (const child of group.children) {
+        if (child.userData && child.userData.isAsteroid && !child.userData.deflected) {
+          const dz = Math.abs(shipPos.z - child.position.z);
+          if (dz < 4.5) {
+            const dx = shipPos.x - child.position.x;
+            const dy = shipPos.y - child.position.y;
+            const dist2D = Math.sqrt(dx * dx + dy * dy);
+            const collisionThreshold = shieldActive ? (child.userData.radius + 3.8) : (child.userData.radius + 1.2);
+
+            if (dist2D <= collisionThreshold) {
+              child.userData.deflected = true;
+              const pushAngle = Math.atan2(child.position.y - shipPos.y, child.position.x - shipPos.x);
+              child.userData.vx = Math.cos(pushAngle) * 38;
+              child.userData.vy = Math.sin(pushAngle) * 38;
+              child.userData.vz = 20;
+
+              if (shieldActive) {
+                if (typeof onDeflect === "function") onDeflect(child.position);
+              } else {
+                if (typeof onHit === "function") onHit(child.position);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  checkSingularityEncounters(shipPos, onEncounter) {
+    for (const group of this.loaded.values()) {
+      for (const child of group.children) {
+        if (child.userData && child.userData.isSingularity && !child.userData.encountered) {
+          const dz = Math.abs(shipPos.z - child.position.z);
+          if (dz < 60.0) {
+            const dx = shipPos.x - child.position.x;
+            const dy = shipPos.y - child.position.y;
+            const dist2D = Math.sqrt(dx * dx + dy * dy);
+            if (dist2D <= child.userData.radius * 2.2) {
+              child.userData.encountered = true;
+              if (typeof onEncounter === "function") onEncounter(child.position);
+            }
+          }
         }
       }
     }
@@ -513,14 +735,14 @@ export class ChunkRenderer {
       for (const child of group.children) {
         if (child.userData && child.userData.isRing && !child.userData.collected) {
           const dz = Math.abs(shipPos.z - child.position.z);
-          if (dz < 4.0) {
+          if (dz < 4.8) {
             const dx = shipPos.x - child.position.x;
             const dy = shipPos.y - child.position.y;
             const dist2D = Math.sqrt(dx * dx + dy * dy);
-            if (dist2D <= child.userData.radius + 1.2) {
+            if (dist2D <= child.userData.radius + 1.4) {
               child.userData.collected = true;
+              child.userData.collectTime = 0;
               this.collectedRings.add(child.userData.id);
-              child.scale.set(1.6, 1.6, 1.6);
               if (typeof onCollect === "function") onCollect(child.position);
             }
           }
@@ -607,6 +829,38 @@ export class ChunkRenderer {
         }
       }
     }
+  }
+
+  /** Queries upcoming celestial objects ahead of the ship for the tactical holographic mini-radar */
+  getAheadCorridorObjects(shipZ, maxAhead = 260) {
+    const items = [];
+    for (const group of this.loaded.values()) {
+      for (const child of group.children) {
+        if (child.userData) {
+          const deltaZ = child.position.z - shipZ;
+          if (deltaZ > 0 && deltaZ <= maxAhead) {
+            let type = null;
+            if (child.userData.isRing && !child.userData.collected) type = "ring";
+            else if (child.userData.isStargate) type = "stargate";
+            else if (child.userData.isAsteroid && !child.userData.deflected) type = "asteroid";
+            else if (child.userData.isSingularity) type = "singularity";
+            else if (child.userData.isBeacon) type = "beacon";
+            else if (child.userData.isUfo) type = "ufo";
+
+            if (type) {
+              items.push({
+                type,
+                x: child.position.x,
+                y: child.position.y,
+                z: child.position.z,
+                deltaZ,
+              });
+            }
+          }
+        }
+      }
+    }
+    return items;
   }
 
   clear() {
