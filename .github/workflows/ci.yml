@@ -63,6 +63,7 @@ jobs:
     needs: validate-and-build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -72,6 +73,8 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Setup Node.js (v20)
         uses: actions/setup-node@v4
