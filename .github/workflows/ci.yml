@@ -6,11 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
+# Allow one concurrent deployment
 concurrency:
   group: "pages"
   cancel-in-progress: true
@@ -23,7 +25,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js (LTS)
+      - name: Setup Node.js (v20)
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -32,7 +34,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./drift-game-source
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Run ESLint Check
         working-directory: ./drift-game-source
@@ -71,7 +73,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Setup Node.js
+      - name: Setup Node.js (v20)
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -81,7 +83,7 @@ jobs:
       - name: Install and Build
         working-directory: ./drift-game-source
         run: |
-          npm ci
+          npm ci --ignore-scripts
           npm run build
 
       - name: Upload GitHub Pages Artifact
