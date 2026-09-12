@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build Outputs (Source dist is ignored; root drift.html is tracked as standalone distribution)
+drift-game-source/dist/
+dist-ssr/
+*.local
+
+# Vite & Vitest Cache
+.vite/
+vitest.config.ts.timestamp-*
+vite.config.js.timestamp-*
+
+# Logs & Diagnostics
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Testing & Coverage
+coverage/
+.nyc_output/
+
+# IDEs & Code Editors
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# Temporary Test & Scratch Snapshots
+*.tmp
+*.temp
+scratch/
+temp/
