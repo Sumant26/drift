@@ -91,12 +91,12 @@ export function updateFlightState(state, input, delta, config = DEFAULT_FLIGHT_C
   const inputX = isAutopilot ? (state.offsetX > 0.5 ? -0.3 : state.offsetX < -0.5 ? 0.3 : 0) : rawInputX;
   const inputY = isAutopilot ? (state.offsetY > 0.5 ? -0.3 : state.offsetY < -0.5 ? 0.3 : 0) : rawInputY;
 
-  const currentMaxOffsetX = isDrift ? (config.maxOffset || 24) * 1.3 : (config.maxOffset || 24);
+  const currentMaxOffsetX = isDrift ? (config.maxOffset || 24) * 1.3 : config.maxOffset || 24;
   const currentMaxOffsetY = config.maxOffsetY || 16;
   const targetOffsetX = isAutopilot ? 0 : inputX * currentMaxOffsetX;
   const targetOffsetY = isAutopilot ? 0 : inputY * currentMaxOffsetY;
 
-  const offsetRate = isDrift ? (config.offsetSmoothRate || 0.025) * 0.5 : (config.offsetSmoothRate || 0.025);
+  const offsetRate = isDrift ? (config.offsetSmoothRate || 0.025) * 0.5 : config.offsetSmoothRate || 0.025;
   const pitchRate = config.pitchSmoothRate || 0.045;
 
   const offsetX = clamp(
@@ -148,12 +148,10 @@ export function updateFlightState(state, input, delta, config = DEFAULT_FLIGHT_C
 
   // Energy Shield Logic
   let shieldEnergy = state.shieldEnergy !== undefined ? state.shieldEnergy : 100;
-  let shieldActive = false;
-  if (wantsShield && shieldEnergy > 5) {
-    shieldActive = true;
+  const shieldActive = Boolean(wantsShield && shieldEnergy > 5);
+  if (shieldActive) {
     shieldEnergy = Math.max(0, shieldEnergy - delta * 22);
   } else {
-    shieldActive = false;
     shieldEnergy = Math.min(100, shieldEnergy + delta * 14);
   }
 

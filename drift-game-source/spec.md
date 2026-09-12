@@ -2,16 +2,18 @@
 
 > **Version**: 2.0.0  
 > **Status**: Living Specification & Development Blueprint  
-> **Core Architecture**: Modular Vanilla JavaScript (ES2022) + Three.js + Web Audio API + Vite Standalone Single-File  
+> **Core Architecture**: Modular Vanilla JavaScript (ES2022) + Three.js + Web Audio API + Vite Standalone Single-File
 
 ---
 
 ## 1. Executive Summary & Design Tenets
 
 ### 1.1 Project Vision
-**Drift** is an infinite, cozy, procedural space-flight experience inspired by *Slow Roads* and *No Man's Sky*, engineered entirely in browser-native technologies. Pilots cruise seamlessly through continuous, dynamically generated celestial sectors featuring luminous crystalline asteroid belts, breathing nebulae, relativistic singularities, ancient megastructure stargates, space fauna, and friendly extraterrestrial encounters.
+
+**Drift** is an infinite, cozy, procedural space-flight experience inspired by _Slow Roads_ and _No Man's Sky_, engineered entirely in browser-native technologies. Pilots cruise seamlessly through continuous, dynamically generated celestial sectors featuring luminous crystalline asteroid belts, breathing nebulae, relativistic singularities, ancient megastructure stargates, space fauna, and friendly extraterrestrial encounters.
 
 ### 1.2 Core Design Tenets
+
 1. **Tranquil Immersion Over Punishment**: No instant-fail collisions, game-over screens, or frustrating timers. Obstacles like asteroids bounce off an active Deflector Shield or reset drift combo meters without breaking flight momentum.
 2. **Kinetic & Fluid Flight Mechanics**: Balanced rotational inertia, smooth pitch/bank damping, and curvilinear path offsets create an intuitive, satisfying cruising feel.
 3. **Pure Zero-Asset Portability**: The entire experience runs with procedural shaders, canvas-generated particle textures, Web Audio synthesizer engines, and zero external binary downloads, enabling a 100% self-contained single-file bundle under 600 kB.
@@ -53,6 +55,7 @@
 ```
 
 ### 2.1 Technology Stack
+
 - **Graphics & Rendering**: Three.js (r128+), WebGL 2.0, Canvas 2D overlays.
 - **Audio Synthesis**: Native Web Audio API (`AudioContext`, `OscillatorNode`, `GainNode`, `BiquadFilterNode`, `AnalyserNode`, `AudioBufferSourceNode`).
 - **Input & Hardware**: Pointer Events, Keyboard Event Listener, Gamepad API with Dual-Rumble Haptics.
@@ -64,6 +67,7 @@
 ## 3. Detailed Subsystem Specifications
 
 ### 3.1 Flight Kinematics & Physics Engine (`src/core/gameState.js`)
+
 - **Coordinate Space**: Right-handed Three.js coordinate system where $+Z$ is the forward flight direction. To match camera perspective, screen Left corresponds to $+X$ and screen Right corresponds to $-X$.
 - **Curvilinear Tunnel Centering**: Continuous path centerline $(X(z), Y(z))$ generated using low-frequency harmonic trigonometric functions (`src/core/path.js`):
   $$X(z) = \sin(z \cdot 0.003) \cdot 38 + \sin(z \cdot 0.007) \cdot 18$$
@@ -82,6 +86,7 @@
 ---
 
 ### 3.2 Procedural World & Chunk Generation (`src/core/`)
+
 - **Sliding-Window Chunk Pipeline (`chunkManager.js`)**:
   - Maintains active chunks in a sliding window (2 chunks behind, 4 chunks ahead).
   - Automatically loads upcoming chunks and disposes of expired chunk meshes and GPU materials.
@@ -99,29 +104,30 @@
 
 ### 3.3 Celestial Entities & Megastructures (`src/render/chunkRenderer.js`)
 
-| Entity | Geometry & Shader Architecture | Interactive Gameplay Mechanics |
-| :--- | :--- | :--- |
-| **Resonance Rings** | Dual concentric counter-rotating energy toroids, 4 orbiting diamond motes, holographic shimmer diaphragm | Collecting builds drift combo, increases streak counter, and triggers warp jumps on 3x streak. |
-| **Ancient Stargates** | Giant 32m metallic frame with dual concentric photon rings and halo aura | Flying through triggers instantaneous Hyperspace Warp Jump and registers codex relic. |
-| **Gravitational Singularity** | Black event horizon sphere, dual superheated plasma accretion disks with differential rotation | Screen-space gravitational lensing distortion, relativistic chime, and discovery entry. |
-| **Cosmic Asteroid Pockets** | Bumpy low-poly dodecahedrons with cratered facets ($28\%$ spawn rate, 1–2 per field) | Weave to evade or deflect using Energy Shield (<kbd>E</kbd>) for bonus deflection score. |
-| **Astral Space Mantas** | Bioluminescent cone & wing mesh with gentle sinusoidal flapping physics | Ambient celestial fauna encounter tracked in logbook. |
-| **Friendly UFOs** | Brushed metallic saucer hull, glowing bubble dome cockpit, and orbiting photon lights | First contact encounter with harmonic resonant greeting. |
-| **Pulsar / Neutron Star** | High-velocity spinning stellar core with opposing relativistic plasma jet beams | Deep space radiation beacon encountered on long flights. |
+| Entity                        | Geometry & Shader Architecture                                                                           | Interactive Gameplay Mechanics                                                                 |
+| :---------------------------- | :------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
+| **Resonance Rings**           | Dual concentric counter-rotating energy toroids, 4 orbiting diamond motes, holographic shimmer diaphragm | Collecting builds drift combo, increases streak counter, and triggers warp jumps on 3x streak. |
+| **Ancient Stargates**         | Giant 32m metallic frame with dual concentric photon rings and halo aura                                 | Flying through triggers instantaneous Hyperspace Warp Jump and registers codex relic.          |
+| **Gravitational Singularity** | Black event horizon sphere, dual superheated plasma accretion disks with differential rotation           | Screen-space gravitational lensing distortion, relativistic chime, and discovery entry.        |
+| **Cosmic Asteroid Pockets**   | Bumpy low-poly dodecahedrons with cratered facets ($28\%$ spawn rate, 1–2 per field)                     | Weave to evade or deflect using Energy Shield (<kbd>E</kbd>) for bonus deflection score.       |
+| **Astral Space Mantas**       | Bioluminescent cone & wing mesh with gentle sinusoidal flapping physics                                  | Ambient celestial fauna encounter tracked in logbook.                                          |
+| **Friendly UFOs**             | Brushed metallic saucer hull, glowing bubble dome cockpit, and orbiting photon lights                    | First contact encounter with harmonic resonant greeting.                                       |
+| **Pulsar / Neutron Star**     | High-velocity spinning stellar core with opposing relativistic plasma jet beams                          | Deep space radiation beacon encountered on long flights.                                       |
 
 ---
 
 ### 3.4 Procedural Web Audio Engine (`src/audio/soundManager.js`)
+
 - **Synthesizer Subsystems**:
   - **Engine Thruster Synth**: Low-frequency sawtooth oscillator ($55\text{ Hz}$) with variable low-pass filter tracked to current flight speed.
   - **Ambient Drone & Pads**: Dual stereo oscillators passing through slow sinusoidal LFOs for deep cosmic tranquility.
   - **Resonance Chimes**: Dual sine waves with fast exponential decay tuned to pentatonic scale frequencies.
   - **Shield SFX**: Frequency-swept bandpass oscillator on activation, white-noise burst on asteroid deflection.
 - **In-Flight Radio Stations**:
-  1. *Cosmic Chill* (BPM: 70, Frequencies: $220\text{ Hz} - 440\text{ Hz}$)
-  2. *Cyberwave Glide* (BPM: 110, Frequencies: $180\text{ Hz} - 660\text{ Hz}$)
-  3. *Deep Space Ambient* (BPM: 50, Frequencies: $110\text{ Hz} - 330\text{ Hz}$)
-  4. *Solar Resonance* (BPM: 90, Frequencies: $260\text{ Hz} - 580\text{ Hz}$)
+  1. _Cosmic Chill_ (BPM: 70, Frequencies: $220\text{ Hz} - 440\text{ Hz}$)
+  2. _Cyberwave Glide_ (BPM: 110, Frequencies: $180\text{ Hz} - 660\text{ Hz}$)
+  3. _Deep Space Ambient_ (BPM: 50, Frequencies: $110\text{ Hz} - 330\text{ Hz}$)
+  4. _Solar Resonance_ (BPM: 90, Frequencies: $260\text{ Hz} - 580\text{ Hz}$)
 - **Real-Time FFT Analyser**:
   - `AnalyserNode` connected to master bus; powers the compact neon visualizer in the top HUD.
 - **Custom Music Importer**:
@@ -130,6 +136,7 @@
 ---
 
 ### 3.5 HUD, UI & Photo Mode Systems (`index.html`, `main.js`)
+
 - **HUD Telemetry Cluster**:
   - Horizon Compass Strip: 360° heading display with distance-to-next-sector countdown.
   - Speedometer & Lifetime Distance Odometer.
@@ -137,13 +144,13 @@
   - Tactical Holographic Mini-Radar (showing ahead rings, gates, singularities, and asteroids).
   - Audio Spectrum Visualizer inside the capsule radio button.
 - **Vessel Hangar & Customizer**:
-  - Hull Coatings: *Arctic Starlight*, *Obsidian Void*, *Solar Phoenix*, *Emerald Genesis*.
-  - Ion Exhaust Modes: *Ion Plasma* (Cyan), *Solar Flare* (Orange), *Void Stream* (Purple), *Emerald Photon* (Green).
-  - Hyperspace Warp Colors: *Cyan*, *Magenta*, *Solar*, *Emerald*, *Amethyst*, *Rainbow*.
+  - Hull Coatings: _Arctic Starlight_, _Obsidian Void_, _Solar Phoenix_, _Emerald Genesis_.
+  - Ion Exhaust Modes: _Ion Plasma_ (Cyan), _Solar Flare_ (Orange), _Void Stream_ (Purple), _Emerald Photon_ (Green).
+  - Hyperspace Warp Colors: _Cyan_, _Magenta_, _Solar_, _Emerald_, _Amethyst_, _Rainbow_.
 - **Zen Meditation Flight Mode (<kbd>U</kbd>)**:
   - Minimalist HUD hiding all gameplay telemetry, displaying an animated 8-second breathing pacer ring and meditation timer.
 - **Photo Mode (<kbd>P</kbd>)**:
-  - 360° orbit camera with scroll zoom, depth-of-field simulation, color matrix filters (*Natural*, *Vibrant*, *Mono*, *Cyberpunk*, *Solar*), and one-click PNG screenshot export.
+  - 360° orbit camera with scroll zoom, depth-of-field simulation, color matrix filters (_Natural_, _Vibrant_, _Mono_, _Cyberpunk_, _Solar_), and one-click PNG screenshot export.
 
 ---
 
@@ -152,6 +159,7 @@
 To take Project Drift to the next echelon of fidelity, gameplay depth, and visual wonder, the following major expansion modules are recommended:
 
 ### 🌟 Module A: Dynamic Cosmic Weather & Stellar Phenomenon
+
 1. **Electromagnetic Ion Storms**:
    - Turbulent purple/magenta particulate lightning arcs leaping between floating asteroids.
    - Gentle electromagnetic turbulence buffeting the ship's wings, requiring active steering compensation.
@@ -163,16 +171,18 @@ To take Project Drift to the next echelon of fidelity, gameplay depth, and visua
 ---
 
 ### 🗺️ Module B: Interactive 3D Starchart & Galactic Waypoint Mapping
+
 1. **Holographic 3D Star Map Overlay (<kbd>M</kbd> / <kbd>Tab</kbd>)**:
    - Seamless zoom-out from ship cockpit into a 3D rotating galactic node graph showing traversed sectors, ancient stargates, and undiscovered celestial anomalies.
 2. **Constellation Discovery & Star Alignment**:
-   - Gaze at distant star clusters to align mythical cosmic constellations (e.g., *The Astral Manta*, *The Orion Needle*) that unlock lore entries in the Codex.
+   - Gaze at distant star clusters to align mythical cosmic constellations (e.g., _The Astral Manta_, _The Orion Needle_) that unlock lore entries in the Codex.
 3. **Sector Seed Sharing**:
    - Shareable seed URLs (e.g. `drift.html#seed=OMEGA-9X`) enabling friends to explore the exact same cosmic corridor and celestial landmarks.
 
 ---
 
 ### 🛠️ Module C: Ship Upgrades & Modular Customization
+
 1. **Unlockable Spacecraft Chassis Archetypes**:
    - **Valkyrie Interceptor**: Agile delta-wing with razor-sharp banking.
    - **Voyager Deep-Space Explorer**: Twin-fuselage cruiser with extended shield capacity and panoramic cockpit glass.
@@ -185,6 +195,7 @@ To take Project Drift to the next echelon of fidelity, gameplay depth, and visua
 ---
 
 ### 👥 Module D: Asynchronous Ghost Flights & Co-op Drift
+
 1. **Ghost Ship Telemetry Sync**:
    - Lightweight WebRTC / WebSocket telemetry streaming that renders translucent, ethereal ghost ships of other pilots drifting through the cosmos in real-time.
 2. **Resonance Ring Time-Trials**:
@@ -195,6 +206,7 @@ To take Project Drift to the next echelon of fidelity, gameplay depth, and visua
 ---
 
 ### 🥽 Module E: Immersive WebXR & Spatial Audio
+
 1. **Native WebXR Support**:
    - One-click VR button for Meta Quest, Apple Vision Pro, and PCVR headsets with true 6DOF head tracking and full-scale 3D cosmic immersion.
 2. **3D Binaural Spatial Audio**:
@@ -220,16 +232,19 @@ To take Project Drift to the next echelon of fidelity, gameplay depth, and visua
 ## 6. Performance Budget & Memory Lifecycle
 
 ### 6.1 Rendering Budget Targets
-| Metric | Desktop Target | Mobile / Low-Power Target |
-| :--- | :--- | :--- |
-| **Frame Rate** | Constant 60–144 FPS | Stable 60 FPS |
-| **Frame Time** | $\le 16.6\text{ ms}$ | $\le 16.6\text{ ms}$ |
-| **Draw Calls** | $< 120$ per frame | $< 80$ per frame |
-| **Triangles** | $< 80,000$ per frame | $< 45,000$ per frame |
-| **VRAM Footprint** | $< 120\text{ MB}$ | $< 70\text{ MB}$ |
+
+| Metric             | Desktop Target       | Mobile / Low-Power Target |
+| :----------------- | :------------------- | :------------------------ |
+| **Frame Rate**     | Constant 60–144 FPS  | Stable 60 FPS             |
+| **Frame Time**     | $\le 16.6\text{ ms}$ | $\le 16.6\text{ ms}$      |
+| **Draw Calls**     | $< 120$ per frame    | $< 80$ per frame          |
+| **Triangles**      | $< 80,000$ per frame | $< 45,000$ per frame      |
+| **VRAM Footprint** | $< 120\text{ MB}$    | $< 70\text{ MB}$          |
 
 ### 6.2 GPU Resource Cleanup (Zero Memory Leak Invariant)
+
 To support infinite uninterrupted flight sessions, all unloaded chunk groups must strictly execute recursive disposal:
+
 ```javascript
 function disposeGroup(group) {
   group.traverse((obj) => {
@@ -243,6 +258,7 @@ function disposeGroup(group) {
 ```
 
 ### 6.3 Dynamic Resolution Scaling (DRS)
+
 - If average frame time exceeds $20\text{ms}$ over 180 consecutive frames, `renderer.setPixelRatio` dynamically steps down from $2.0 \to 1.0 \to 0.75$ to preserve smooth 60 FPS flight.
 
 ---
@@ -278,13 +294,13 @@ function disposeGroup(group) {
 
 ## 9. Verification & Testing Matrix
 
-| Subsystem | Test Suite (`tests/`) | Key Invariants Verified |
-| :--- | :--- | :--- |
-| **Math & Curves** | `math.test.js`, `path.test.js` | Clamping, smoothTowards, Mulberry32 PRNG seed reproducibility, continuous tangent derivatives. |
-| **Game State** | `gameState.test.js` | Speed transitions, inertia smoothing, shield energy depletion & recharge rate, combo score multipliers. |
-| **Chunk Generation** | `chunkGenerator.test.js`, `chunkManager.test.js` | Deterministic scenery output, sliding window load/unload queue, entity spawn bounds. |
-| **Biomes & Codex** | `biomes.test.js`, `codex.test.js` | Biome transitions along Z axis, localStorage persistence, high score & anomaly registration. |
-| **Input Hardware** | `inputManager.test.js` | Keyboard/touch state reducers, key mapping, input state immutability. |
+| Subsystem            | Test Suite (`tests/`)                            | Key Invariants Verified                                                                                 |
+| :------------------- | :----------------------------------------------- | :------------------------------------------------------------------------------------------------------ |
+| **Math & Curves**    | `math.test.js`, `path.test.js`                   | Clamping, smoothTowards, Mulberry32 PRNG seed reproducibility, continuous tangent derivatives.          |
+| **Game State**       | `gameState.test.js`                              | Speed transitions, inertia smoothing, shield energy depletion & recharge rate, combo score multipliers. |
+| **Chunk Generation** | `chunkGenerator.test.js`, `chunkManager.test.js` | Deterministic scenery output, sliding window load/unload queue, entity spawn bounds.                    |
+| **Biomes & Codex**   | `biomes.test.js`, `codex.test.js`                | Biome transitions along Z axis, localStorage persistence, high score & anomaly registration.            |
+| **Input Hardware**   | `inputManager.test.js`                           | Keyboard/touch state reducers, key mapping, input state immutability.                                   |
 
 ---
 

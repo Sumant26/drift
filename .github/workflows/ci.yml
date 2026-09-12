@@ -1,0 +1,94 @@
+name: CI & Deployment Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  validate-and-build:
+    name: Lint, Test & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: drift-game-source/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./drift-game-source
+        run: npm ci
+
+      - name: Run ESLint Check
+        working-directory: ./drift-game-source
+        run: npm run lint
+
+      - name: Run Prettier Style Check
+        working-directory: ./drift-game-source
+        run: npm run format:check
+
+      - name: Run Vitest Unit Tests (93 Tests)
+        working-directory: ./drift-game-source
+        run: npm test
+
+      - name: Build Single-File Standalone Bundle
+        working-directory: ./drift-game-source
+        run: npm run build
+
+      - name: Upload Single-File Standalone Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-standalone
+          path: drift-game-source/dist/index.html
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    needs: validate-and-build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: drift-game-source/package-lock.json
+
+      - name: Install and Build
+        working-directory: ./drift-game-source
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload GitHub Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: drift-game-source/dist/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -7,7 +7,13 @@ export const WARP_THEMES = Object.freeze({
   solar: { id: "solar", name: "Solar Amber", color: 0xffaa22, hex: "#ffaa22" },
   emerald: { id: "emerald", name: "Emerald Matrix", color: 0x2ef8a0, hex: "#2ef8a0" },
   amethyst: { id: "amethyst", name: "Deep Amethyst", color: 0xc084fc, hex: "#c084fc" },
-  rainbow: { id: "rainbow", name: "Prism Rainbow", color: 0xffffff, hex: "linear-gradient(90deg, #ff4e50, #f9d423, #6ee7ff)", isRainbow: true },
+  rainbow: {
+    id: "rainbow",
+    name: "Prism Rainbow",
+    color: 0xffffff,
+    hex: "linear-gradient(90deg, #ff4e50, #f9d423, #6ee7ff)",
+    isRainbow: true,
+  },
 });
 
 export const EXHAUST_TYPES = Object.freeze({
@@ -170,9 +176,14 @@ export class EffectsManager {
       colors[i * 3 + 2] = 0.2;
 
       this.sparkData.push({
-        x: 0, y: -1000, z: 0,
-        vx: 0, vy: 0, vz: 0,
-        life: 0, maxLife: 1,
+        x: 0,
+        y: -1000,
+        z: 0,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+        life: 0,
+        maxLife: 1,
       });
     }
 
@@ -200,7 +211,7 @@ export class EffectsManager {
     const colors = new Float32Array(this.trailLength * 2 * 3);
 
     for (let i = 0; i < this.trailLength * 2; i++) {
-      const alpha = 1 - (Math.floor(i / 2) / this.trailLength);
+      const alpha = 1 - Math.floor(i / 2) / this.trailLength;
       colors[i * 3 + 0] = 0.5 * alpha;
       colors[i * 3 + 1] = 0.85 * alpha;
       colors[i * 3 + 2] = 1.0 * alpha;
@@ -338,13 +349,20 @@ export class EffectsManager {
 
   initConstellations() {
     const starNodes = [
-      new THREE.Vector3(120, 220, 450), new THREE.Vector3(160, 260, 490),
-      new THREE.Vector3(160, 260, 490), new THREE.Vector3(220, 240, 520),
-      new THREE.Vector3(220, 240, 520), new THREE.Vector3(190, 190, 470),
-      new THREE.Vector3(190, 190, 470), new THREE.Vector3(120, 220, 450),
-      new THREE.Vector3(-180, 240, 500), new THREE.Vector3(-240, 270, 530),
-      new THREE.Vector3(-240, 270, 530), new THREE.Vector3(-210, 310, 570),
-      new THREE.Vector3(-210, 310, 570), new THREE.Vector3(-150, 280, 540),
+      new THREE.Vector3(120, 220, 450),
+      new THREE.Vector3(160, 260, 490),
+      new THREE.Vector3(160, 260, 490),
+      new THREE.Vector3(220, 240, 520),
+      new THREE.Vector3(220, 240, 520),
+      new THREE.Vector3(190, 190, 470),
+      new THREE.Vector3(190, 190, 470),
+      new THREE.Vector3(120, 220, 450),
+      new THREE.Vector3(-180, 240, 500),
+      new THREE.Vector3(-240, 270, 530),
+      new THREE.Vector3(-240, 270, 530),
+      new THREE.Vector3(-210, 310, 570),
+      new THREE.Vector3(-210, 310, 570),
+      new THREE.Vector3(-150, 280, 540),
     ];
     const positions = new Float32Array(starNodes.length * 3);
     for (let i = 0; i < starNodes.length; i++) {
@@ -432,7 +450,7 @@ export class EffectsManager {
       posAttr.setXYZ(idxL + 2, pr1.x, pr1.y, pr1.z);
       posAttr.setXYZ(idxL + 3, pr2.x, pr2.y, pr2.z);
 
-      const fade = 1 - (i / this.trailLength);
+      const fade = 1 - i / this.trailLength;
       const intensity = (isBoost ? 1.6 : 0.85) * fade;
       colAttr.setXYZ(idxL + 0, colObj.r * intensity, colObj.g * intensity, colObj.b * intensity);
       colAttr.setXYZ(idxL + 1, colObj.r * intensity, colObj.g * intensity, colObj.b * intensity);
@@ -447,7 +465,8 @@ export class EffectsManager {
       this.warpTunnelMesh.position.set(shipPos.x, shipPos.y, shipPos.z + 80);
       this.warpTunnelMesh.rotation.z += delta * (this.hyperspaceActive ? 3.5 : 0.5);
       const targetTunnelOpacity = this.hyperspaceActive ? 0.85 : 0;
-      this.warpTunnelMesh.material.opacity += (targetTunnelOpacity - this.warpTunnelMesh.material.opacity) * Math.min(1, delta * 8);
+      this.warpTunnelMesh.material.opacity +=
+        (targetTunnelOpacity - this.warpTunnelMesh.material.opacity) * Math.min(1, delta * 8);
       this.warpTunnelMesh.visible = this.warpTunnelMesh.material.opacity > 0.01;
     }
 
@@ -462,7 +481,8 @@ export class EffectsManager {
       }
 
       const targetShieldOpacity = state.shieldActive ? 0.75 + this.shieldHitIntensity * 0.25 : 0;
-      this.shieldMesh.material.opacity += (targetShieldOpacity - this.shieldMesh.material.opacity) * Math.min(1, delta * 12);
+      this.shieldMesh.material.opacity +=
+        (targetShieldOpacity - this.shieldMesh.material.opacity) * Math.min(1, delta * 12);
       this.shieldMesh.visible = this.shieldMesh.material.opacity > 0.01;
 
       const scale = 1.0 + this.shieldHitIntensity * 0.35 + Math.sin(state.elapsed * 6) * 0.04;
@@ -567,12 +587,12 @@ export class EffectsManager {
       this.warpLines.material.color.setHSL(rainbowHue, 0.9, 0.7);
     }
 
-    const targetWarpOpacity = (this.hyperspaceActive || isBoost) ? (this.hyperspaceActive ? 1.0 : 0.85) : 0;
+    const targetWarpOpacity = this.hyperspaceActive || isBoost ? (this.hyperspaceActive ? 1.0 : 0.85) : 0;
     this.warpLines.material.opacity += (targetWarpOpacity - this.warpLines.material.opacity) * 0.14;
 
     if (this.warpLines.material.opacity > 0.01) {
       const warpPos = this.warpLines.geometry.attributes.position;
-      const length = this.hyperspaceActive ? 65 : (isBoost ? 30 : 12);
+      const length = this.hyperspaceActive ? 65 : isBoost ? 30 : 12;
       for (let i = 0; i < this.warpCount; i++) {
         let z = warpPos.getZ(i * 2);
         if (z < shipPos.z - 30) {
@@ -596,7 +616,7 @@ export class EffectsManager {
       const ribbonWidth = 2.4;
 
       for (let i = 0; i <= this.ribbonSegments; i++) {
-        const z = shipPos.z - 10 + (i * stepZ);
+        const z = shipPos.z - 10 + i * stepZ;
         const cx = pathX(z);
         const cy = pathY(z) - 0.8;
 
@@ -630,11 +650,7 @@ export class EffectsManager {
           shipPos.y + 180 + Math.random() * 150,
           shipPos.z + 350
         );
-        this.cometVelocity.set(
-          (Math.random() - 0.5) * 120,
-          -40 - Math.random() * 30,
-          -80 - Math.random() * 60
-        );
+        this.cometVelocity.set((Math.random() - 0.5) * 120, -40 - Math.random() * 30, -80 - Math.random() * 60);
         this.cometMesh.visible = true;
       }
     } else {
@@ -642,7 +658,12 @@ export class EffectsManager {
       const cPos = this.cometMesh.geometry.attributes.position;
       for (let i = 0; i < 16; i++) {
         const trailOffset = this.cometVelocity.clone().multiplyScalar(-i * 0.04);
-        cPos.setXYZ(i, this.cometPos.x + trailOffset.x, this.cometPos.y + trailOffset.y, this.cometPos.z + trailOffset.z);
+        cPos.setXYZ(
+          i,
+          this.cometPos.x + trailOffset.x,
+          this.cometPos.y + trailOffset.y,
+          this.cometPos.z + trailOffset.z
+        );
       }
       cPos.needsUpdate = true;
 

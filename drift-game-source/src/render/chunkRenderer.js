@@ -204,14 +204,16 @@ function buildUfoGroup(scale, hue, glowTexture) {
   ufoGroup.add(tractorBeam);
 
   // 5. Glowing cockpit aura
-  const aura = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: glowTexture,
-    color: ufoColor,
-    transparent: true,
-    opacity: 0.6,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-  }));
+  const aura = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: glowTexture,
+      color: ufoColor,
+      transparent: true,
+      opacity: 0.6,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    })
+  );
   aura.scale.set(7.5, 7.5, 1);
   ufoGroup.add(aura);
 
@@ -227,14 +229,16 @@ function buildPulsarGroup(glowTexture) {
   pulsarGroup.add(core);
 
   // Glowing Core Aura
-  const coreAura = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: glowTexture,
-    color: 0x7feaff,
-    transparent: true,
-    opacity: 0.85,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-  }));
+  const coreAura = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: glowTexture,
+      color: 0x7feaff,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    })
+  );
   coreAura.scale.set(65, 65, 1);
   pulsarGroup.add(coreAura);
 
@@ -304,14 +308,16 @@ function buildBeaconGroup(scale, hue, glowTexture) {
   beaconGroup.add(orbitGroup);
 
   // Radiant Aura
-  const aura = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: glowTexture,
-    color: beaconColor,
-    transparent: true,
-    opacity: 0.65,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-  }));
+  const aura = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: glowTexture,
+      color: beaconColor,
+      transparent: true,
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    })
+  );
   aura.scale.set(18, 18, 1);
   beaconGroup.add(aura);
 
@@ -416,14 +422,16 @@ function buildChunkGroup(chunkData, glowTexture) {
     gateGroup.add(outerFrame);
     gateGroup.add(innerRing);
 
-    const gateAura = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: glowTexture,
-      color: gateColor,
-      transparent: true,
-      opacity: 0.65,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    }));
+    const gateAura = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: glowTexture,
+        color: gateColor,
+        transparent: true,
+        opacity: 0.65,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      })
+    );
     gateAura.scale.set(42, 42, 1);
     gateGroup.add(gateAura);
 
@@ -486,7 +494,12 @@ function buildChunkGroup(chunkData, glowTexture) {
 
     holeGroup.position.set(chunkData.singularity.x, chunkData.singularity.y, chunkData.singularity.z);
     holeGroup.scale.setScalar(chunkData.singularity.radius);
-    holeGroup.userData = { isSingularity: true, id: chunkData.singularity.id, radius: chunkData.singularity.radius, encountered: false };
+    holeGroup.userData = {
+      isSingularity: true,
+      id: chunkData.singularity.id,
+      radius: chunkData.singularity.radius,
+      encountered: false,
+    };
     group.add(holeGroup);
   }
 
@@ -645,7 +658,8 @@ export class ChunkRenderer {
                   sub.rotation.z += 0.038;
                 }
                 if (sub.userData && sub.userData.isCoreField && sub.material) {
-                  sub.material.opacity = sub.userData.baseOpacity + Math.sin(elapsed * 4 + child.position.z * 0.1) * 0.08;
+                  sub.material.opacity =
+                    sub.userData.baseOpacity + Math.sin(elapsed * 4 + child.position.z * 0.1) * 0.08;
                 }
               }
             } else {
@@ -690,7 +704,7 @@ export class ChunkRenderer {
             const dx = shipPos.x - child.position.x;
             const dy = shipPos.y - child.position.y;
             const dist2D = Math.sqrt(dx * dx + dy * dy);
-            const collisionThreshold = shieldActive ? (child.userData.radius + 3.8) : (child.userData.radius + 1.2);
+            const collisionThreshold = shieldActive ? child.userData.radius + 3.8 : child.userData.radius + 1.2;
 
             if (dist2D <= collisionThreshold) {
               child.userData.deflected = true;

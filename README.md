@@ -1,6 +1,6 @@
 # 🚀 Drift — Cozy Endless Space Flight
 
-A serene, procedural flight experience inspired by *slowroads.io* and *No Man's Sky*, set in the deep cosmic void. Glide endlessly through winding corridors of glowing crystalline formations, shifting nebulae, celestial anomalies, ancient megastructures, and friendly extraterrestrial encounters. There are no timers, game-over screens, or fail states — just fluid, meditative space cruising.
+A serene, procedural flight experience inspired by _slowroads.io_ and _No Man's Sky_, set in the deep cosmic void. Glide endlessly through winding corridors of glowing crystalline formations, shifting nebulae, celestial anomalies, ancient megastructures, and friendly extraterrestrial encounters. There are no timers, game-over screens, or fail states — just fluid, meditative space cruising.
 
 Play instantly with the single-file distribution ([`drift.html`](./drift.html)) or develop locally using the Vite + Three.js modular source code in [`drift-game-source/`](./drift-game-source/).
 
@@ -16,7 +16,7 @@ For the full architectural design, formulas, and expansion roadmap, see [**`spec
 - **Energy Shield Deflector (<kbd>E</kbd>)**: Real-time energy shield bubble with hexagonal ripple collision VFX to deflect sparse asteroid hazards and earn bonus drift score.
 - **Relativistic Black Holes & Singularities**: Screen-space accretion disk distortion, dual Doppler-shifted plasma rings, and gravitational lensing effects.
 - **Volumetric Hyperspace Warp**: Dynamic warp gate corridor and high-velocity light streaks when passing stargates or hitting 3x ring streaks.
-- **Procedural Synthesizer & Radio**: 4 in-flight synthesizer radio stations (*Cosmic Chill*, *Cyberwave*, *Deep Space Ambient*, *Solar Resonance*) with an interactive audio frequency visualizer.
+- **Procedural Synthesizer & Radio**: 4 in-flight synthesizer radio stations (_Cosmic Chill_, _Cyberwave_, _Deep Space Ambient_, _Solar Resonance_) with an interactive audio frequency visualizer.
 - **Custom Music Importer**: Drag-and-drop or select your own `.mp3`, `.wav`, or `.ogg` audio files to cruise through the cosmos to your own soundtrack.
 - **Tactical Holographic Mini-Radar**: Real-time cockpit radar displaying upcoming resonance rings, ancient stargates, black holes, and asteroid fields.
 - **Vessel Hangar & Customizer (<kbd>H</kbd>)**: Select hull coatings (Arctic, Obsidian, Solar, Emerald), ion thruster exhausts (Ion, Solar Flare, Void Stream, Emerald Photon), and hyperspace warp palettes.
@@ -31,23 +31,23 @@ For the full architectural design, formulas, and expansion roadmap, see [**`spec
 
 ## 🎮 Controls
 
-| Action | Keyboard | Mobile / Touchscreen | Gamepad |
-|---|---|---|---|
-| **Steer Left / Right** | <kbd>A</kbd> / <kbd>D</kbd> or <kbd>←</kbd> / <kbd>→</kbd> | Left / Right D-pad | Left Stick / D-Pad |
-| **Pitch Up / Down** | <kbd>W</kbd> / <kbd>S</kbd> or <kbd>↑</kbd> / <kbd>↓</kbd> | Up / Down D-pad | Left Stick / D-Pad |
-| **Deflector Shield** | <kbd>E</kbd> | 🛡️ Shield Button | <kbd>X</kbd> / <kbd>Square</kbd> / <kbd>LB</kbd> |
-| **Cruise Boost** | <kbd>Shift</kbd> | BOOST Button | <kbd>A</kbd> / <kbd>Cross</kbd> / <kbd>RT</kbd> |
-| **Space Drift / Brake** | <kbd>Space</kbd> | — | <kbd>B</kbd> / <kbd>Circle</kbd> / <kbd>LT</kbd> |
-| **Cycle Radio Station** | <kbd>T</kbd> | 📻 Radio Button | <kbd>D-Pad Right</kbd> |
-| **Zen Meditation Mode** | <kbd>U</kbd> | 🧘 Zen Button | — |
-| **Toggle Aurora Ribbon** | <kbd>R</kbd> | ✨ Ribbon Button | — |
-| **Retro CRT Arcade Mode** | <kbd>V</kbd> | 📺 CRT Button | — |
-| **Cycle Camera Mode** | <kbd>C</kbd> | 🎥 Camera Button | <kbd>R3</kbd> (Stick Click) |
-| **Autopilot Cruise** | <kbd>Z</kbd> | 🚀 Cruise Button | — |
-| **Vessel Hangar** | <kbd>H</kbd> | 🎨 Hangar Button | — |
-| **Traveler Codex** | <kbd>L</kbd> | 📜 Codex Button | <kbd>Back</kbd> / <kbd>Select</kbd> |
-| **Audio Frequency Mixer** | <kbd>M</kbd> | 🎚️ Sound Button | — |
-| **Photo Mode Studio** | <kbd>P</kbd> | 📷 Photo Button | <kbd>Y</kbd> / <kbd>Triangle</kbd> |
+| Action                    | Keyboard                                                   | Mobile / Touchscreen | Gamepad                                          |
+| ------------------------- | ---------------------------------------------------------- | -------------------- | ------------------------------------------------ |
+| **Steer Left / Right**    | <kbd>A</kbd> / <kbd>D</kbd> or <kbd>←</kbd> / <kbd>→</kbd> | Left / Right D-pad   | Left Stick / D-Pad                               |
+| **Pitch Up / Down**       | <kbd>W</kbd> / <kbd>S</kbd> or <kbd>↑</kbd> / <kbd>↓</kbd> | Up / Down D-pad      | Left Stick / D-Pad                               |
+| **Deflector Shield**      | <kbd>E</kbd>                                               | 🛡️ Shield Button     | <kbd>X</kbd> / <kbd>Square</kbd> / <kbd>LB</kbd> |
+| **Cruise Boost**          | <kbd>Shift</kbd>                                           | BOOST Button         | <kbd>A</kbd> / <kbd>Cross</kbd> / <kbd>RT</kbd>  |
+| **Space Drift / Brake**   | <kbd>Space</kbd>                                           | —                    | <kbd>B</kbd> / <kbd>Circle</kbd> / <kbd>LT</kbd> |
+| **Cycle Radio Station**   | <kbd>T</kbd>                                               | 📻 Radio Button      | <kbd>D-Pad Right</kbd>                           |
+| **Zen Meditation Mode**   | <kbd>U</kbd>                                               | 🧘 Zen Button        | —                                                |
+| **Toggle Aurora Ribbon**  | <kbd>R</kbd>                                               | ✨ Ribbon Button     | —                                                |
+| **Retro CRT Arcade Mode** | <kbd>V</kbd>                                               | 📺 CRT Button        | —                                                |
+| **Cycle Camera Mode**     | <kbd>C</kbd>                                               | 🎥 Camera Button     | <kbd>R3</kbd> (Stick Click)                      |
+| **Autopilot Cruise**      | <kbd>Z</kbd>                                               | 🚀 Cruise Button     | —                                                |
+| **Vessel Hangar**         | <kbd>H</kbd>                                               | 🎨 Hangar Button     | —                                                |
+| **Traveler Codex**        | <kbd>L</kbd>                                               | 📜 Codex Button      | <kbd>Back</kbd> / <kbd>Select</kbd>              |
+| **Audio Frequency Mixer** | <kbd>M</kbd>                                               | 🎚️ Sound Button      | —                                                |
+| **Photo Mode Studio**     | <kbd>P</kbd>                                               | 📷 Photo Button      | <kbd>Y</kbd> / <kbd>Triangle</kbd>               |
 
 ---
 
@@ -120,9 +120,11 @@ Drift/
 ## 🚀 Quick Start & Development
 
 ### 1. Play Directly (No Setup Needed)
+
 Simply open [`drift.html`](./drift.html) in any web browser. No web server, dependencies, or internet connection required.
 
 ### 2. Development Workspace
+
 ```bash
 # Navigate to source folder
 cd drift-game-source

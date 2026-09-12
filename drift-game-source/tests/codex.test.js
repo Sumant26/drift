@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { loadCodex, saveCodex, recordSectorDiscovery, recordAnomalyDiscovery, DEFAULT_CODEX_DATA } from "../src/core/codex.js";
+import { loadCodex, saveCodex, recordSectorDiscovery, recordAnomalyDiscovery } from "../src/core/codex.js";
 import { ValidationError } from "../src/utils/errors.js";
 
 describe("codex", () => {
@@ -9,8 +9,12 @@ describe("codex", () => {
     const store = {};
     mockStorage = {
       getItem: (k) => store[k] ?? null,
-      setItem: (k, v) => { store[k] = v; },
-      clear: () => { for (const k in store) delete store[k]; },
+      setItem: (k, v) => {
+        store[k] = v;
+      },
+      clear: () => {
+        for (const k in store) delete store[k];
+      },
     };
   });
 

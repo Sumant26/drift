@@ -86,7 +86,7 @@ export function buildScene(doc, width, height) {
 }
 
 /** Updates scene background, fog, and binary sun orbital lighting */
-export function updateAtmosphere(scene, hemiLight, biome, delta, elapsed = 0) {
+export function updateAtmosphere(scene, hemiLight, biome, delta, _elapsed = 0) {
   if (!scene || !biome) return;
   const targetBg = new THREE.Color(biome.skyColor);
   const targetAmbient = new THREE.Color(biome.ambientColor);

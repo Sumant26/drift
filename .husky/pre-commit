@@ -1,0 +1,4 @@
+#!/bin/sh
+cd drift-game-source || exit 1
+npx lint-staged
+npm test

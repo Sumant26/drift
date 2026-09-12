@@ -78,7 +78,6 @@ export class CameraManager {
 
       this.camera.up.set(Math.sin(this.currentBank), Math.cos(this.currentBank), 0);
       this.camera.lookAt(this.currentLookAt);
-
     } else if (this.currentMode === CAMERA_MODES.COCKPIT) {
       // 2. Cockpit Cam: first-person forward view
       this.targetPos.set(pos.x, pos.y + 0.4, pos.z + 0.8);
@@ -91,7 +90,6 @@ export class CameraManager {
       this.currentBank += (targetBank - this.currentBank) * Math.min(1, delta * 12);
       this.camera.up.set(Math.sin(this.currentBank), Math.cos(this.currentBank), 0);
       this.camera.lookAt(this.currentLookAt);
-
     } else if (this.currentMode === CAMERA_MODES.CINEMATIC) {
       // 3. Cinematic Orbit Cam: smooth rotating drone view
       this.orbitAngle += delta * 0.35;

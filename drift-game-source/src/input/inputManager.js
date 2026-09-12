@@ -2,11 +2,16 @@ import { InputError, ValidationError } from "../utils/errors.js";
 
 /** Maps physical key codes to logical input flags. */
 export const KEY_MAP = Object.freeze({
-  ArrowLeft: "left", KeyA: "left",
-  ArrowRight: "right", KeyD: "right",
-  ArrowUp: "up", KeyW: "up",
-  ArrowDown: "down", KeyS: "down",
-  ShiftLeft: "boost", ShiftRight: "boost",
+  ArrowLeft: "left",
+  KeyA: "left",
+  ArrowRight: "right",
+  KeyD: "right",
+  ArrowUp: "up",
+  KeyW: "up",
+  ArrowDown: "down",
+  KeyS: "down",
+  ShiftLeft: "boost",
+  ShiftRight: "boost",
   Space: "drift",
   KeyE: "shield",
 });

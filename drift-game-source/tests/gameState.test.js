@@ -78,7 +78,9 @@ describe("updateFlightState", () => {
   it("throws on invalid input", () => {
     const state = createInitialState();
     expect(() => updateFlightState(state, {}, 0.1)).toThrow(ValidationError);
-    expect(() => updateFlightState(state, { left: 1, right: false, up: false, down: false, boost: false }, 0.1)).toThrow(ValidationError);
+    expect(() =>
+      updateFlightState(state, { left: 1, right: false, up: false, down: false, boost: false }, 0.1)
+    ).toThrow(ValidationError);
   });
 
   it("throws ValidationError for negative delta", () => {

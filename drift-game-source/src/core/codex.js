@@ -20,7 +20,7 @@ export const DEFAULT_CODEX_DATA = Object.freeze({
 /**
  * Loads traveler logbook data from storage (or fallback memory object).
  */
-export function loadCodex(storage = (typeof localStorage !== "undefined" ? localStorage : null)) {
+export function loadCodex(storage = typeof localStorage !== "undefined" ? localStorage : null) {
   if (!storage) return { ...DEFAULT_CODEX_DATA };
   try {
     const raw = storage.getItem(STORAGE_KEY);
@@ -41,7 +41,7 @@ export function loadCodex(storage = (typeof localStorage !== "undefined" ? local
 /**
  * Saves traveler logbook data to storage.
  */
-export function saveCodex(data, storage = (typeof localStorage !== "undefined" ? localStorage : null)) {
+export function saveCodex(data, storage = typeof localStorage !== "undefined" ? localStorage : null) {
   if (!data || typeof data !== "object") {
     throw new ValidationError("data must be an object");
   }

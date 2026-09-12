@@ -18,8 +18,9 @@ const MAX_DELTA = 0.1;
 
 function showFatalError(message) {
   const el = document.createElement("div");
-  el.style.cssText = "position:fixed;inset:0;display:flex;align-items:center;justify-content:center;"
-    + "background:#06040f;color:#d8dcff;font-family:sans-serif;padding:24px;text-align:center;z-index:999;";
+  el.style.cssText =
+    "position:fixed;inset:0;display:flex;align-items:center;justify-content:center;" +
+    "background:#06040f;color:#d8dcff;font-family:sans-serif;padding:24px;text-align:center;z-index:999;";
   el.textContent = message;
   document.body.appendChild(el);
 }
@@ -86,7 +87,14 @@ export function startGame() {
     console.warn("Keyboard input unavailable:", err.message);
   }
 
-  for (const [id, flag] of [["tp-up", "up"], ["tp-down", "down"], ["tp-left", "left"], ["tp-right", "right"], ["tp-shield", "shield"], ["boostbtn", "boost"]]) {
+  for (const [id, flag] of [
+    ["tp-up", "up"],
+    ["tp-down", "down"],
+    ["tp-left", "left"],
+    ["tp-right", "right"],
+    ["tp-shield", "shield"],
+    ["boostbtn", "boost"],
+  ]) {
     try {
       unbindHooks.push(bindTouchButton(document, id, flag, inputRef, { onFirstInput: userInteracted }));
     } catch (err) {
@@ -100,7 +108,7 @@ export function startGame() {
   const vizCanvas = document.getElementById("audioVisualizerCanvas");
   const vizCtx = vizCanvas?.getContext("2d");
 
-  function drawTacticalRadar(shipZ, offsetX, offsetY) {
+  function drawTacticalRadar(shipZ, offsetX, _offsetY) {
     if (!radarCtx || !radarCanvas) return;
     const w = radarCanvas.width;
     const h = radarCanvas.height;
@@ -120,8 +128,10 @@ export function startGame() {
     // Crosshairs
     radarCtx.strokeStyle = "rgba(110, 231, 255, 0.18)";
     radarCtx.beginPath();
-    radarCtx.moveTo(cx, 4); radarCtx.lineTo(cx, h - 4);
-    radarCtx.moveTo(4, cy); radarCtx.lineTo(w - 4, cy);
+    radarCtx.moveTo(cx, 4);
+    radarCtx.lineTo(cx, h - 4);
+    radarCtx.moveTo(4, cy);
+    radarCtx.lineTo(w - 4, cy);
     radarCtx.stroke();
 
     // Player position marker (center bottom)
@@ -184,7 +194,7 @@ export function startGame() {
     const startX = Math.floor((w - totalW) / 2);
 
     for (let i = 0; i < barCount; i++) {
-      let val = 0.3;
+      let val;
       if (freqData && freqData.length > 0) {
         val = (freqData[i * 3] || 25) / 255;
       } else {
@@ -230,7 +240,7 @@ export function startGame() {
     }
   }
 
-  function updateHud(st, biomeData) {
+  function updateHud(st, _biomeData) {
     const speedNum = document.getElementById("speedNum");
     const speedFill = document.getElementById("speedfill");
     const distNum = document.getElementById("distNum");
@@ -250,7 +260,8 @@ export function startGame() {
     const comboMultiplier = document.getElementById("comboMultiplier");
 
     if (speedNum) speedNum.textContent = Math.round(st.speed);
-    if (speedFill) speedFill.style.width = Math.min(100, Math.round((st.speed / DEFAULT_FLIGHT_CONFIG.boostSpeed) * 100)) + "%";
+    if (speedFill)
+      speedFill.style.width = Math.min(100, Math.round((st.speed / DEFAULT_FLIGHT_CONFIG.boostSpeed) * 100)) + "%";
     if (distNum) distNum.textContent = Math.round(st.shipZ) + " ly traveled";
     if (ringCountEl) ringCountEl.textContent = ringScore;
     if (streakCountEl) streakCountEl.textContent = ringStreak;
@@ -259,7 +270,9 @@ export function startGame() {
     if (shieldFill && shieldVal) {
       const energyPct = Math.round(st.shieldEnergy !== undefined ? st.shieldEnergy : 100);
       shieldFill.style.width = `${energyPct}%`;
-      shieldFill.style.background = st.shieldActive ? "linear-gradient(90deg, #38bdf8, #6ee7ff)" : "linear-gradient(90deg, #0284c7, #38bdf8)";
+      shieldFill.style.background = st.shieldActive
+        ? "linear-gradient(90deg, #38bdf8, #6ee7ff)"
+        : "linear-gradient(90deg, #0284c7, #38bdf8)";
       shieldVal.textContent = `${energyPct}%`;
     }
 
@@ -398,7 +411,8 @@ export function startGame() {
     const mode = cameraManager.cycleMode();
     const label = document.getElementById("camLabel");
     if (label) {
-      label.textContent = mode === CAMERA_MODES.CHASE ? "Chase" : mode === CAMERA_MODES.COCKPIT ? "Cockpit" : "Cinematic";
+      label.textContent =
+        mode === CAMERA_MODES.CHASE ? "Chase" : mode === CAMERA_MODES.COCKPIT ? "Cockpit" : "Cinematic";
     }
   }
 
@@ -467,10 +481,14 @@ export function startGame() {
   });
 
   // Gamepad Rumble Intensity Selector
-  for (const [id, intensity] of [["rumbleHigh", "high"], ["rumbleSoft", "soft"], ["rumbleOff", "off"]]) {
+  for (const [id, intensity] of [
+    ["rumbleHigh", "high"],
+    ["rumbleSoft", "soft"],
+    ["rumbleOff", "off"],
+  ]) {
     document.getElementById(id)?.addEventListener("click", () => {
       gamepadManager.setRumbleIntensity(intensity);
-      document.querySelectorAll("#rumbleHigh, #rumbleSoft, #rumbleOff").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll("#rumbleHigh, #rumbleSoft, #rumbleOff").forEach((b) => b.classList.remove("active"));
       document.getElementById(id)?.classList.add("active");
       if (intensity !== "off") gamepadManager.pulseHaptic(150, 0.5, 0.3);
     });
@@ -503,7 +521,9 @@ export function startGame() {
       if (themeKey && SHIP_THEMES[themeKey]) {
         currentThemeKey = themeKey;
         setShipTheme(ship, themeKey);
-        document.querySelectorAll(".theme-grid:not(#warpThemeGrid) .theme-card").forEach(c => c.classList.remove("active"));
+        document
+          .querySelectorAll(".theme-grid:not(#warpThemeGrid) .theme-card")
+          .forEach((c) => c.classList.remove("active"));
         card.classList.add("active");
       }
     });
@@ -515,7 +535,7 @@ export function startGame() {
       const exhaustKey = card.getAttribute("data-exhaust");
       if (exhaustKey) {
         effectsManager.setExhaustType(exhaustKey);
-        document.querySelectorAll("#exhaustThemeGrid .theme-card").forEach(c => c.classList.remove("active"));
+        document.querySelectorAll("#exhaustThemeGrid .theme-card").forEach((c) => c.classList.remove("active"));
         card.classList.add("active");
       }
     });
@@ -527,7 +547,7 @@ export function startGame() {
       const warpKey = card.getAttribute("data-warp");
       if (warpKey) {
         effectsManager.setWarpTheme(warpKey);
-        document.querySelectorAll("#warpThemeGrid .theme-card").forEach(c => c.classList.remove("active"));
+        document.querySelectorAll("#warpThemeGrid .theme-card").forEach((c) => c.classList.remove("active"));
         card.classList.add("active");
       }
     });
@@ -547,7 +567,7 @@ export function startGame() {
       if (loadedTrackName) loadedTrackName.textContent = `▶ Loaded: ${trackName}`;
       const radioLabel = document.getElementById("radioLabel");
       if (radioLabel) radioLabel.textContent = "Custom Space Deck";
-    } catch (err) {
+    } catch {
       if (loadedTrackName) loadedTrackName.textContent = "Error decoding audio file.";
     }
   }
@@ -593,9 +613,13 @@ export function startGame() {
   window.addEventListener("pointerup", () => {
     photoManager.handlePointerUp();
   });
-  window.addEventListener("wheel", (e) => {
-    photoManager.handleWheel(e.deltaY);
-  }, { passive: true });
+  window.addEventListener(
+    "wheel",
+    (e) => {
+      photoManager.handleWheel(e.deltaY);
+    },
+    { passive: true }
+  );
 
   // Global Key Triggers (T, U, R, V, L, M, C, Z, P, H, E)
   window.addEventListener("keydown", (e) => {
@@ -753,14 +777,18 @@ export function startGame() {
         // Zen Meditation Mode visual timer & breathing rhythm
         if (isZenMode) {
           zenTimerSeconds += delta;
-          const mins = Math.floor(zenTimerSeconds / 60).toString().padStart(2, "0");
-          const secs = Math.floor(zenTimerSeconds % 60).toString().padStart(2, "0");
+          const mins = Math.floor(zenTimerSeconds / 60)
+            .toString()
+            .padStart(2, "0");
+          const secs = Math.floor(zenTimerSeconds % 60)
+            .toString()
+            .padStart(2, "0");
           const timerEl = document.getElementById("zenTimer");
           if (timerEl) timerEl.textContent = `${mins}:${secs}`;
 
           const pacerEl = document.getElementById("zenPacerText");
           if (pacerEl) {
-            const cycleTime = (state.elapsed % 8.0);
+            const cycleTime = state.elapsed % 8.0;
             if (cycleTime < 3.2) pacerEl.textContent = "INHALE";
             else if (cycleTime < 4.0) pacerEl.textContent = "HOLD";
             else if (cycleTime < 7.2) pacerEl.textContent = "EXHALE";

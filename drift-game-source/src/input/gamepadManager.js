@@ -50,7 +50,7 @@ export class GamepadManager {
     const dpadRight = pad.buttons[15]?.pressed;
 
     // Buttons
-    const btnBoost = pad.buttons[0]?.pressed || pad.buttons[7]?.pressed || (pad.buttons[7]?.value > 0.3);
+    const btnBoost = pad.buttons[0]?.pressed || pad.buttons[7]?.pressed || pad.buttons[7]?.value > 0.3;
 
     const isLeft = stickX < -this.deadzone || dpadLeft;
     const isRight = stickX > this.deadzone || dpadRight;
@@ -78,12 +78,14 @@ export class GamepadManager {
 
     for (const pad of gamepads) {
       if (pad && pad.vibrationActuator && typeof pad.vibrationActuator.playEffect === "function") {
-        pad.vibrationActuator.playEffect("dual-rumble", {
-          startDelay: 0,
-          duration,
-          weakMagnitude: Math.min(1.0, weakMagnitude * scale),
-          strongMagnitude: Math.min(1.0, strongMagnitude * scale),
-        }).catch(() => {});
+        pad.vibrationActuator
+          .playEffect("dual-rumble", {
+            startDelay: 0,
+            duration,
+            weakMagnitude: Math.min(1.0, weakMagnitude * scale),
+            strongMagnitude: Math.min(1.0, strongMagnitude * scale),
+          })
+          .catch(() => {});
       }
     }
   }

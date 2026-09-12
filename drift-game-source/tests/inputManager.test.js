@@ -5,7 +5,15 @@ import { InputError, ValidationError } from "../src/utils/errors.js";
 describe("createInputState", () => {
   it("starts with every flag false", () => {
     const state = createInputState();
-    expect(state).toEqual({ left: false, right: false, up: false, down: false, boost: false, drift: false, shield: false });
+    expect(state).toEqual({
+      left: false,
+      right: false,
+      up: false,
+      down: false,
+      boost: false,
+      drift: false,
+      shield: false,
+    });
   });
 });
 
@@ -45,11 +53,16 @@ describe("reduceKeyEvent", () => {
 function makeMockTarget() {
   const listeners = {};
   return {
-    addEventListener: vi.fn((type, fn) => { listeners[type] = listeners[type] || []; listeners[type].push(fn); }),
+    addEventListener: vi.fn((type, fn) => {
+      listeners[type] = listeners[type] || [];
+      listeners[type].push(fn);
+    }),
     removeEventListener: vi.fn((type, fn) => {
       listeners[type] = (listeners[type] || []).filter((f) => f !== fn);
     }),
-    dispatch(type, event) { for (const fn of listeners[type] || []) fn(event); },
+    dispatch(type, event) {
+      for (const fn of listeners[type] || []) fn(event);
+    },
   };
 }
 

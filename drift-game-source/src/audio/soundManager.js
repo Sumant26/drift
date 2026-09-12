@@ -65,34 +65,34 @@ export class SoundManager {
     // Musical Tonality per Sector Biome
     this.biomeChords = {
       "opal-nebula": [
-        [174.61, 220.00, 261.63, 329.63, 392.00], // Fmaj9
-        [146.83, 220.00, 261.63, 329.63, 440.00], // Dm9
-        [130.81, 196.00, 246.94, 293.66, 392.00], // Cmaj9
-        [116.54, 174.61, 220.00, 261.63, 349.23], // Bbmaj7#11
+        [174.61, 220.0, 261.63, 329.63, 392.0], // Fmaj9
+        [146.83, 220.0, 261.63, 329.63, 440.0], // Dm9
+        [130.81, 196.0, 246.94, 293.66, 392.0], // Cmaj9
+        [116.54, 174.61, 220.0, 261.63, 349.23], // Bbmaj7#11
       ],
       "solar-expanse": [
-        [146.83, 220.00, 293.66, 369.99, 440.00], // Dmaj9
-        [196.00, 246.94, 293.66, 369.99, 440.00], // Gmaj9
-        [164.81, 246.94, 329.63, 392.00, 493.88], // Em9
-        [220.00, 277.18, 329.63, 440.00, 554.37], // A6/9
+        [146.83, 220.0, 293.66, 369.99, 440.0], // Dmaj9
+        [196.0, 246.94, 293.66, 369.99, 440.0], // Gmaj9
+        [164.81, 246.94, 329.63, 392.0, 493.88], // Em9
+        [220.0, 277.18, 329.63, 440.0, 554.37], // A6/9
       ],
       "abyssal-rift": [
-        [130.81, 196.00, 233.08, 293.66, 349.23], // Cm11
-        [155.56, 233.08, 277.18, 349.23, 415.30], // Ebmaj7#11
+        [130.81, 196.0, 233.08, 293.66, 349.23], // Cm11
+        [155.56, 233.08, 277.18, 349.23, 415.3], // Ebmaj7#11
         [116.54, 174.61, 233.08, 261.63, 349.23], // Bbsus2
-        [130.81, 174.61, 220.00, 261.63, 329.63], // F/C
+        [130.81, 174.61, 220.0, 261.63, 329.63], // F/C
       ],
       "emerald-genesis": [
-        [220.00, 261.63, 329.63, 392.00, 493.88], // Am9
-        [174.61, 220.00, 261.63, 329.63, 440.00], // Fmaj7#11
-        [196.00, 246.94, 293.66, 392.00, 440.00], // G6
-        [164.81, 220.00, 261.63, 329.63, 392.00], // Em7
+        [220.0, 261.63, 329.63, 392.0, 493.88], // Am9
+        [174.61, 220.0, 261.63, 329.63, 440.0], // Fmaj7#11
+        [196.0, 246.94, 293.66, 392.0, 440.0], // G6
+        [164.81, 220.0, 261.63, 329.63, 392.0], // Em7
       ],
       "supernova-core": [
-        [123.47, 185.00, 220.00, 277.18, 369.99], // Bm9
-        [146.83, 220.00, 293.66, 369.99, 440.00], // Dmaj9
+        [123.47, 185.0, 220.0, 277.18, 369.99], // Bm9
+        [146.83, 220.0, 293.66, 369.99, 440.0], // Dmaj9
         [164.81, 246.94, 329.63, 369.99, 493.88], // E9
-        [196.00, 246.94, 293.66, 369.99, 440.00], // Gmaj7#11
+        [196.0, 246.94, 293.66, 369.99, 440.0], // Gmaj7#11
       ],
     };
   }
@@ -322,7 +322,14 @@ export class SoundManager {
   }
 
   triggerMelodyPluck() {
-    if (!this.ctx || this.isMuted || this.ctx.state !== "running" || !this.currentChord || this.currentStation.id === "silence") return;
+    if (
+      !this.ctx ||
+      this.isMuted ||
+      this.ctx.state !== "running" ||
+      !this.currentChord ||
+      this.currentStation.id === "silence"
+    )
+      return;
     const now = this.ctx.currentTime;
     const isCyber = this.currentStation.id === "cyber";
 
@@ -369,7 +376,7 @@ export class SoundManager {
   playChime(pitchMultiplier = 1.0) {
     if (!this.ctx || this.isMuted || this.ctx.state !== "running") return;
     const now = this.ctx.currentTime;
-    const pentatonic = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66];
+    const pentatonic = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66];
     const baseFreq = pentatonic[Math.floor(Math.random() * pentatonic.length)] * pitchMultiplier;
 
     const osc = this.ctx.createOscillator();
@@ -475,7 +482,11 @@ export class SoundManager {
       this.customTrackName = file.name || "Custom Track";
 
       if (this.customSource) {
-        try { this.customSource.stop(); } catch (_) {}
+        try {
+          this.customSource.stop();
+        } catch {
+          /* ignore */
+        }
       }
 
       this.customSource = this.ctx.createBufferSource();
@@ -486,7 +497,7 @@ export class SoundManager {
       this.isCustomPlaying = true;
 
       // Switch radio to custom station
-      const customStation = RADIO_STATIONS.find(s => s.id === "custom");
+      const customStation = RADIO_STATIONS.find((s) => s.id === "custom");
       if (customStation) {
         this.currentStation = customStation;
         this.stationIndex = RADIO_STATIONS.indexOf(customStation);
@@ -522,8 +533,8 @@ export class SoundManager {
     }
 
     if (this.engineOsc && this.engineFilter && this.engineGain) {
-      const targetPitch = 46 + (speed * 0.9) + (isBoost ? 18 : 0);
-      const targetFilter = 110 + (speed * 4.2) + (isBoost ? 170 : 0);
+      const targetPitch = 46 + speed * 0.9 + (isBoost ? 18 : 0);
+      const targetFilter = 110 + speed * 4.2 + (isBoost ? 170 : 0);
       const baseGain = (this.volumes.engine || 0.45) * 0.35;
       const targetGain = baseGain * (0.8 + (speed / 70) * 0.5 + (isBoost ? 0.4 : 0));
 
@@ -544,7 +555,11 @@ export class SoundManager {
 
   dispose() {
     if (this.customSource) {
-      try { this.customSource.stop(); } catch (_) {}
+      try {
+        this.customSource.stop();
+      } catch {
+        /* ignore */
+      }
     }
     if (this.ctx) {
       this.ctx.close().catch(() => {});

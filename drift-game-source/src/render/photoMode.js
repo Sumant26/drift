@@ -71,7 +71,7 @@ export class PhotoModeManager {
   }
 
   setFilter(filterId) {
-    const filter = PHOTO_FILTERS.find(f => f.id === filterId) || PHOTO_FILTERS[0];
+    const filter = PHOTO_FILTERS.find((f) => f.id === filterId) || PHOTO_FILTERS[0];
     const canvas = this.renderer.domElement;
     if (canvas) {
       canvas.style.filter = filter.css;

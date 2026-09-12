@@ -157,7 +157,7 @@ export function generateChunkData(index, config = DEFAULT_CHUNK_CONFIG) {
     const ufoCount = 1 + (rand() > 0.45 ? 1 : 0);
     for (let u = 0; u < ufoCount; u++) {
       const uZ = zStart + cfg.chunkLength * (0.2 + u * 0.35 + rand() * 0.2);
-      const side = (u === 0 ? (rand() > 0.5 ? 1 : -1) : (rand() > 0.5 ? -1 : 1));
+      const side = u === 0 ? (rand() > 0.5 ? 1 : -1) : rand() > 0.5 ? -1 : 1;
       ufos.push({
         id: `ufo-${index}-${u}`,
         x: pathX(uZ) + side * (24 + rand() * 40),
@@ -228,5 +228,24 @@ export function generateChunkData(index, config = DEFAULT_CHUNK_CONFIG) {
     }
   }
 
-  return { index, zStart, zEnd, hue, crystals, nebula, planet, rings, stargate, singularity, fauna, ufo, ufos, pulsar, beacon, comet, asteroids, biomeData };
+  return {
+    index,
+    zStart,
+    zEnd,
+    hue,
+    crystals,
+    nebula,
+    planet,
+    rings,
+    stargate,
+    singularity,
+    fauna,
+    ufo,
+    ufos,
+    pulsar,
+    beacon,
+    comet,
+    asteroids,
+    biomeData,
+  };
 }

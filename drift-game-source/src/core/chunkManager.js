@@ -1,8 +1,8 @@
 import { ValidationError } from "../utils/errors.js";
 
 export const DEFAULT_CHUNK_WINDOW = Object.freeze({
-  behind: 2,   // how many chunks behind current may remain loaded before eviction
-  ahead: 4,    // how many chunks ahead of current should be pre-loaded
+  behind: 2, // how many chunks behind current may remain loaded before eviction
+  ahead: 4, // how many chunks ahead of current should be pre-loaded
 });
 
 function assertFiniteNumber(value, name) {
