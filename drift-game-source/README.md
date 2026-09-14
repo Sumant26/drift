@@ -10,20 +10,21 @@ For the full architectural design, formulas, and expansion roadmap, see [**`spec
 
 ## 🏆 Engineering Standards & Quality Checklist
 
-| # | Subsystem / Standard | Location | Status |
-| :---: | :--- | :--- | :---: |
-| **1** | **AI Rules & Constraints** | [`.agents/rules/project_spec.md`](./.agents/rules/project_spec.md) | ✅ **Live & Enforced** |
-| **2** | **Technical Specification** | [**`spec.md`**](./spec.md) | ✅ **Complete (312 Lines)** |
-| **3** | **Automated Unit Tests** | [`drift-game-source/tests/`](./drift-game-source/tests/) | ✅ **93 / 93 Tests Passing** |
-| **4** | **Decoupled Architecture** | `drift-game-source/src/core/` | ✅ **Pure Math / 0% DOM** |
-| **5** | **Memory Cleanup Invariants** | `src/render/chunkRenderer.js` | ✅ **Recursive GPU Disposal** |
-| **6** | **Single Root `.gitignore`** | [**`.gitignore`**](./.gitignore) | ✅ **Consolidated & Clean** |
-| **7** | **Developer Documentation** | [**`README.md`**](./README.md) | ✅ **Up-to-date with Controls Matrix** |
-| **8** | **ESLint & Prettier** | [`eslint.config.js`](./drift-game-source/eslint.config.js), [`.prettierrc`](./drift-game-source/.prettierrc) | ✅ **0 Errors, 0 Warnings** |
-| **9** | **Git Pre-Commit Hooks** | [`.husky/pre-commit`](./.husky/pre-commit) + `lint-staged` | ✅ **Active & Automated** |
-| **10** | **GitHub Actions CI/CD** | [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) | ✅ **Automated Test & Pages Deploy** |
+|   #    | Subsystem / Standard          | Location                                                                                                     |                 Status                 |
+| :----: | :---------------------------- | :----------------------------------------------------------------------------------------------------------- | :------------------------------------: |
+| **1**  | **AI Rules & Constraints**    | [`.agents/rules/project_spec.md`](./.agents/rules/project_spec.md)                                           |         ✅ **Live & Enforced**         |
+| **2**  | **Technical Specification**   | [**`spec.md`**](./spec.md)                                                                                   |      ✅ **Complete (312 Lines)**       |
+| **3**  | **Automated Unit Tests**      | [`drift-game-source/tests/`](./drift-game-source/tests/)                                                     |      ✅ **93 / 93 Tests Passing**      |
+| **4**  | **Decoupled Architecture**    | `drift-game-source/src/core/`                                                                                |       ✅ **Pure Math / 0% DOM**        |
+| **5**  | **Memory Cleanup Invariants** | `src/render/chunkRenderer.js`                                                                                |     ✅ **Recursive GPU Disposal**      |
+| **6**  | **Single Root `.gitignore`**  | [**`.gitignore`**](./.gitignore)                                                                             |      ✅ **Consolidated & Clean**       |
+| **7**  | **Developer Documentation**   | [**`README.md`**](./README.md)                                                                               | ✅ **Up-to-date with Controls Matrix** |
+| **8**  | **ESLint & Prettier**         | [`eslint.config.js`](./drift-game-source/eslint.config.js), [`.prettierrc`](./drift-game-source/.prettierrc) |      ✅ **0 Errors, 0 Warnings**       |
+| **9**  | **Git Pre-Commit Hooks**      | [`.husky/pre-commit`](./.husky/pre-commit) + `lint-staged`                                                   |       ✅ **Active & Automated**        |
+| **10** | **GitHub Actions CI/CD**      | [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)                                                     |  ✅ **Automated Test & Pages Deploy**  |
 
 ### 🛠️ Configured Project Standards:
+
 - **📄 [`.editorconfig`](./.editorconfig)**: Universal file ensuring all editors (VS Code, WebStorm, Sublime, Cursor) use UTF-8, 2 spaces, LF line endings, and trim trailing whitespace automatically.
 - **⚖️ [`LICENSE`](./LICENSE)**: Explicit **MIT License** file for open-source clarity.
 - **📊 Test Coverage Reporter (`npm run test:coverage`)**: Visual code-coverage analysis powered by `@vitest/coverage-v8` reporting **92.84% statements / 100% functions** coverage across core logic engines.

@@ -52,13 +52,10 @@ export class EffectsManager {
     this.sparksMesh = null;
     this.sparkData = [];
 
-    // Stardust & Ion Rain
+    // Stardust
     this.stardust = null;
     this.stardustCount = 600;
     this.stardustRange = 120;
-
-    this.ionRain = null;
-    this.ionRainCount = 250;
 
     // Warp & Hyperspace Volumetric Tunnel
     this.warpLines = null;
@@ -91,7 +88,6 @@ export class EffectsManager {
     this.initTrails();
     this.initDriftSparks();
     this.initStardust();
-    this.initIonRain();
     this.initWarpLines();
     this.initWarpTunnel();
     this.initEnergyShield();
@@ -255,34 +251,6 @@ export class EffectsManager {
 
     this.stardust = new THREE.Points(geo, mat);
     this.scene.add(this.stardust);
-  }
-
-  initIonRain() {
-    const geo = new THREE.BufferGeometry();
-    const positions = new Float32Array(this.ionRainCount * 6);
-    for (let i = 0; i < this.ionRainCount; i++) {
-      const x = (Math.random() - 0.5) * 140;
-      const y = (Math.random() - 0.5) * 80;
-      const z = (Math.random() - 0.5) * 140;
-      positions[i * 6 + 0] = x;
-      positions[i * 6 + 1] = y;
-      positions[i * 6 + 2] = z;
-      positions[i * 6 + 3] = x;
-      positions[i * 6 + 4] = y - 4.5;
-      positions[i * 6 + 5] = z;
-    }
-    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-
-    const mat = new THREE.LineBasicMaterial({
-      color: 0x6be5ff,
-      transparent: true,
-      opacity: 0.28,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-
-    this.ionRain = new THREE.LineSegments(geo, mat);
-    this.scene.add(this.ionRain);
   }
 
   initWarpLines() {
@@ -553,28 +521,6 @@ export class EffectsManager {
     }
     dustPositions.needsUpdate = true;
 
-    // 6. Ion Rain update
-    if (this.ionRain) {
-      const rainPos = this.ionRain.geometry.attributes.position;
-      const rainRange = 140;
-      const halfRain = rainRange * 0.5;
-      for (let i = 0; i < this.ionRainCount; i++) {
-        let x = rainPos.getX(i * 2);
-        let y = rainPos.getY(i * 2) - delta * 35;
-        let z = rainPos.getZ(i * 2);
-
-        if (y < shipPos.y - 30) y = shipPos.y + 40;
-        if (z < shipPos.z - halfRain) z += rainRange;
-        if (z > shipPos.z + halfRain) z -= rainRange;
-        if (x < shipPos.x - halfRain) x += rainRange;
-        if (x > shipPos.x + halfRain) x -= rainRange;
-
-        rainPos.setXYZ(i * 2 + 0, x, y, z);
-        rainPos.setXYZ(i * 2 + 1, x, y - 4.5, z);
-      }
-      this.ionRain.geometry.attributes.position.needsUpdate = true;
-    }
-
     // 7. Warp Lines
     if (this.hyperspaceTimer > 0) {
       this.hyperspaceTimer -= delta;
@@ -690,11 +636,6 @@ export class EffectsManager {
       this.scene.remove(this.stardust);
       this.stardust.geometry.dispose();
       this.stardust.material.dispose();
-    }
-    if (this.ionRain) {
-      this.scene.remove(this.ionRain);
-      this.ionRain.geometry.dispose();
-      this.ionRain.material.dispose();
     }
     if (this.warpLines) {
       this.scene.remove(this.warpLines);
